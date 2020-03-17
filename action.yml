@@ -1,0 +1,19 @@
+name: 'Run Database Migrations'
+description: "Run migrations in one of Peachjar's environments."
+author: 'Peachjar Engineering'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
+inputs:
+  awsAccessKeyId:
+    required: true
+    description: AWS Access Key ID
+  awsSecretAccessKey:
+    required: true
+    description: AWS Secret Access Key
+  environment:
+    required: true
+    description: Environment to run migrations in
+  migrations:
+    required: true
+    description: Migration image=secret pairs (QS encoded)

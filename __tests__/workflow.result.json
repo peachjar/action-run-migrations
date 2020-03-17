@@ -1,0 +1,182 @@
+{
+  "metadata": {
+    "name": "migrate-database-557wk",
+    "generateName": "migrate-database-",
+    "namespace": "default",
+    "selfLink": "/apis/argoproj.io/v1alpha1/namespaces/default/workflows/migrate-database-557wk",
+    "uid": "e58e0f73-3e5f-11ea-b5a0-06eb195f7d06",
+    "resourceVersion": "97064170",
+    "generation": 8,
+    "creationTimestamp": "2020-01-24T04:13:38Z",
+    "labels": {
+      "workflows.argoproj.io/completed": "true",
+      "workflows.argoproj.io/phase": "Succeeded"
+    }
+  },
+  "spec": {
+    "templates": [
+      {
+        "name": "main",
+        "inputs": {},
+        "outputs": {},
+        "metadata": {},
+        "steps": [
+          [
+            {
+              "name": "repair",
+              "template": "repair",
+              "arguments": {}
+            }
+          ],
+          [
+            {
+              "name": "migrate",
+              "template": "migrate",
+              "arguments": {}
+            }
+          ]
+        ]
+      },
+      {
+        "name": "repair",
+        "inputs": {},
+        "outputs": {},
+        "metadata": {},
+        "container": {
+          "name": "",
+          "image": "quay.io/peachjar/{{workflow.parameters.image}}",
+          "command": [
+            "flyway"
+          ],
+          "args": [
+            "repair"
+          ],
+          "envFrom": [
+            {
+              "secretRef": {
+                "name": "{{workflow.parameters.dbsecret}}"
+              }
+            }
+          ],
+          "resources": {}
+        }
+      },
+      {
+        "name": "migrate",
+        "inputs": {},
+        "outputs": {},
+        "metadata": {},
+        "container": {
+          "name": "",
+          "image": "quay.io/peachjar/{{workflow.parameters.image}}",
+          "command": [
+            "flyway"
+          ],
+          "args": [
+            "migrate"
+          ],
+          "envFrom": [
+            {
+              "secretRef": {
+                "name": "{{workflow.parameters.dbsecret}}"
+              }
+            }
+          ],
+          "resources": {}
+        }
+      }
+    ],
+    "entrypoint": "main",
+    "arguments": {
+      "parameters": [
+        {
+          "name": "image",
+          "value": "svc-credits-db:git-7b4ccc4"
+        },
+        {
+          "name": "dbsecret",
+          "value": "flyway-credits-postgres-env"
+        }
+      ]
+    },
+    "imagePullSecrets": [
+      {
+        "name": "peachjar-eks-pull-secret"
+      }
+    ]
+  },
+  "status": {
+    "phase": "Succeeded",
+    "startedAt": "2020-01-24T04:13:38Z",
+    "finishedAt": "2020-01-24T04:13:47Z",
+    "nodes": {
+      "migrate-database-557wk": {
+        "id": "migrate-database-557wk",
+        "name": "migrate-database-557wk",
+        "displayName": "migrate-database-557wk",
+        "type": "Steps",
+        "templateName": "main",
+        "phase": "Succeeded",
+        "startedAt": "2020-01-24T04:13:38Z",
+        "finishedAt": "2020-01-24T04:13:47Z",
+        "children": [
+          "migrate-database-557wk-1694926330"
+        ],
+        "outboundNodes": [
+          "migrate-database-557wk-863011952"
+        ]
+      },
+      "migrate-database-557wk-1694926330": {
+        "id": "migrate-database-557wk-1694926330",
+        "name": "migrate-database-557wk[0]",
+        "displayName": "[0]",
+        "type": "StepGroup",
+        "phase": "Succeeded",
+        "boundaryID": "migrate-database-557wk",
+        "startedAt": "2020-01-24T04:13:38Z",
+        "finishedAt": "2020-01-24T04:13:43Z",
+        "children": [
+          "migrate-database-557wk-2934495705"
+        ]
+      },
+      "migrate-database-557wk-2701333207": {
+        "id": "migrate-database-557wk-2701333207",
+        "name": "migrate-database-557wk[1]",
+        "displayName": "[1]",
+        "type": "StepGroup",
+        "phase": "Succeeded",
+        "boundaryID": "migrate-database-557wk",
+        "startedAt": "2020-01-24T04:13:43Z",
+        "finishedAt": "2020-01-24T04:13:47Z",
+        "children": [
+          "migrate-database-557wk-863011952"
+        ]
+      },
+      "migrate-database-557wk-2934495705": {
+        "id": "migrate-database-557wk-2934495705",
+        "name": "migrate-database-557wk[0].repair",
+        "displayName": "repair",
+        "type": "Pod",
+        "templateName": "repair",
+        "phase": "Succeeded",
+        "boundaryID": "migrate-database-557wk",
+        "startedAt": "2020-01-24T04:13:38Z",
+        "finishedAt": "2020-01-24T04:13:42Z",
+        "children": [
+          "migrate-database-557wk-2701333207"
+        ]
+      },
+      "migrate-database-557wk-863011952": {
+        "id": "migrate-database-557wk-863011952",
+        "name": "migrate-database-557wk[1].migrate",
+        "displayName": "migrate",
+        "type": "Pod",
+        "templateName": "migrate",
+        "phase": "Succeeded",
+        "boundaryID": "migrate-database-557wk",
+        "startedAt": "2020-01-24T04:13:43Z",
+        "finishedAt": "2020-01-24T04:13:47Z"
+      }
+    }
+  }
+}
