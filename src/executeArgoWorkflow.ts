@@ -14,15 +14,15 @@ export default async function submitWorkflowToArgo(
 
     core.debug(`Running workflow for ${name}`)
 
-    await exec('argo', [
-        '--kubeconfig',
-        kubeconfig,
-        'submit',
-        workflowFile,
-        ...Object.entries(params)
-            .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), [] as string[]),
-        '--wait', '-o=json',
-        '|', 'jq', '-r', '.metadata.name', '>', idFile,
+    const paramsString = Object.entries(params)
+        .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), [] as string[])
+        .join(' ')
+
+    await exec('sh', [
+        '-c',
+        `"argo --kubeconfig ${kubeconfig} submit ${workflowFile} \
+         ${paramsString} --wait -o=json | jq -r .metadata.name > ${idFile}
+        "`,
     ], {
         cwd,
         env,
@@ -30,10 +30,9 @@ export default async function submitWorkflowToArgo(
 
     core.debug(`Getting results for ${name}`)
 
-    await exec('argo', [
-        '--kubeconfig',
-        kubeconfig,
-        'get', `\`cat ${idFile}\``, '-o=json', '>', workflowOutputFile,
+    await exec('sh', [
+        '-c',
+        `"argo --kubeconfig ${kubeconfig} get \`cat ${idFile}\` -o=json > ${workflowOutputFile}"`,
     ], {
         cwd,
         env,

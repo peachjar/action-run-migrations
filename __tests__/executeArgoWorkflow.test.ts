@@ -51,20 +51,16 @@ describe('Execute Argo Workflow', () => {
         it('should fail the whole workflow', async () => {
             const result = await executeArgoWorkflow(workflow, deps, env)
             expect(exec).toHaveBeenCalledTimes(2)
-            expect(exec).toHaveBeenCalledWith('argo', [
-                '--kubeconfig', 'kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml',
-                'submit', 'workflows/migrations/migrate.yml',
-                '-p', 'image=svc-auth-db:abcd123',
-                '-p', 'dbsecret=flyway-auth-postgres-env',
-                '--wait', '-o=json',
-                '|', 'jq', '-r', '.metadata.name', '>', 'workflow.svc-auth-db.id',
+            expect(exec).toHaveBeenCalledWith('sh', [
+                '-c',
+                '"argo --kubeconfig kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml get `cat workflow.svc-auth-db.id` -o=json > /tmp/workflow.svc-auth-db.result.json"',
             ], {
                 cwd: './peachjar-aloha',
                 env,
             })
-            expect(exec).toHaveBeenCalledWith('argo', [
-                '--kubeconfig', 'kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml',
-                'get', `\`cat workflow.svc-auth-db.id\``, '-o=json', '>', '/tmp/workflow.svc-auth-db.result.json',
+            expect(exec).toHaveBeenCalledWith('sh', [
+                '-c',
+                '"argo --kubeconfig kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml get `cat workflow.svc-auth-db.id` -o=json > /tmp/workflow.svc-auth-db.result.json"',
             ], {
                 cwd: './peachjar-aloha',
                 env,
