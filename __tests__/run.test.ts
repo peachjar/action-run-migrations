@@ -157,7 +157,7 @@ describe('Run function', () => {
                     deployEnv: environment,
                     name: migImage,
                     workflowFile: 'workflows/migrations/migrate.yml',
-                    cwd: './peachjar-aloha',
+                    cwd: expect.anything(),
                     params: {
                         image: 'svc-auth-db:fa1e24f',
                         dbsecret: migSecret,
@@ -197,7 +197,7 @@ describe('Run function', () => {
                     deployEnv: environment,
                     name: migImage,
                     workflowFile: 'workflows/migrations/migrate.yml',
-                    cwd: './peachjar-aloha',
+                    cwd: expect.anything(),
                     params: {
                         image: 'svc-auth-db:latest',
                         dbsecret: migSecret,
@@ -241,7 +241,7 @@ describe('Run function', () => {
                     deployEnv: environment,
                     name: migImage,
                     workflowFile: 'workflows/migrations/migrate.yml',
-                    cwd: './peachjar-aloha',
+                    cwd: expect.anything(),
                     params: {
                         image: 'svc-auth-db:fa1e24f',
                         dbsecret: migSecret,
@@ -259,7 +259,7 @@ describe('Run function', () => {
                     deployEnv: environment,
                     name: 'foobar',
                     workflowFile: 'workflows/migrations/migrate.yml',
-                    cwd: './peachjar-aloha',
+                    cwd: expect.anything(),
                     params: {
                         image: 'foobar:foobaz',
                         dbsecret: 'foobar-env',
@@ -277,7 +277,7 @@ describe('Run function', () => {
                     deployEnv: environment,
                     name: 'yomama',
                     workflowFile: 'workflows/migrations/migrate.yml',
-                    cwd: './peachjar-aloha',
+                    cwd: expect.anything(),
                     params: {
                         image: 'yomama:fa1e24f',
                         dbsecret: 'yomama-env',

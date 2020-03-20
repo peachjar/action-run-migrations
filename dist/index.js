@@ -27107,22 +27107,23 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_1 = __webpack_require__(557);
+const path_1 = __webpack_require__(622);
 function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { core, exec, readFileAsync }, env) {
     return __awaiter(this, void 0, void 0, function* () {
         const idFile = `workflow.${name}.id`;
         const workflowOutputFile = `/tmp/workflow.${name}.result.json`;
-        const kubeconfig = `kilauea/kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`;
+        const kubeconfig = path_1.join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`);
+        const workflowFileAbsolutePath = path_1.join(cwd, './peachjar-aloha/', workflowFile);
         core.debug(`Running workflow for ${name}`);
         const paramsString = Object.entries(params)
             .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), [])
             .join(' ');
         yield exec('sh', [
             '-c',
-            `"/usr/local/bin/argo --kubeconfig ${kubeconfig} submit ${workflowFile} \
+            `"/usr/local/bin/argo --kubeconfig ${kubeconfig} submit ${workflowFileAbsolutePath} \
          ${paramsString} --wait -o=json | jq -r .metadata.name > ${idFile}
         "`.trim().replace(/\n/gim, ' '),
         ], {
-            cwd,
             env,
         });
         core.debug(`Getting results for ${name}`);
@@ -27131,11 +27132,10 @@ function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { 
             `"/usr/local/bin/argo --kubeconfig ${kubeconfig} get \`cat ${idFile}\` -o=json > ${workflowOutputFile}"`
                 .trim().replace(/\n/gim, ' '),
         ], {
-            cwd,
             env,
         });
         core.debug(`Reading workflow results file for ${name}`);
-        const resultsFile = yield readFileAsync(workflowFile, 'utf-8');
+        const resultsFile = yield readFileAsync(workflowOutputFile, 'utf-8');
         core.debug(`Parsing workflow results file for ${name}`);
         const results = JSON.parse(resultsFile);
         const status = lodash_1.get(results, 'spec.status.phase');
@@ -41709,7 +41709,7 @@ function run(deps, context, env) {
                     dbsecret: secret,
                 },
                 workflowFile: 'workflows/migrations/migrate.yml',
-                cwd: './peachjar-aloha',
+                cwd: process.cwd(),
             }, deps, childEnv)));
             if (!results.every(lodash_1.identity)) {
                 return core.setFailed('One or more migrations failed to complete successfully.');

@@ -81,7 +81,7 @@ export default async function run(
                         dbsecret: secret,
                     },
                     workflowFile: 'workflows/migrations/migrate.yml',
-                    cwd: './peachjar-aloha',
+                    cwd: process.cwd(),
                 }, deps, childEnv)
             )
         )

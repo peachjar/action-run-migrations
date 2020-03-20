@@ -1,6 +1,7 @@
 import { Deps, Environment, Workflow } from './api'
 
 import { get } from 'lodash'
+import { join } from 'path'
 
 export default async function submitWorkflowToArgo(
     { deployEnv, cwd, name, params, workflowFile }: Workflow,
@@ -10,7 +11,8 @@ export default async function submitWorkflowToArgo(
 
     const idFile = `workflow.${name}.id`
     const workflowOutputFile = `/tmp/workflow.${name}.result.json`
-    const kubeconfig = `kilauea/kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`
+    const kubeconfig = join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`)
+    const workflowFileAbsolutePath = join(cwd, './peachjar-aloha/', workflowFile)
 
     core.debug(`Running workflow for ${name}`)
 
@@ -20,11 +22,10 @@ export default async function submitWorkflowToArgo(
 
     await exec('sh', [
         '-c',
-        `"/usr/local/bin/argo --kubeconfig ${kubeconfig} submit ${workflowFile} \
-         ${paramsString} --wait -o=json | jq -r .metadata.name > ${idFile}
-        "`.trim().replace(/\n/gim, ' '),
+        `"/usr/local/bin/argo --kubeconfig ${kubeconfig} submit ${workflowFileAbsolutePath} \
+         ${paramsString} --wait -o=json | jq -r .metadata.name > ${idFile}"`
+            .trim().replace(/\n/gim, ' ').replace(/\s+/gm, ' ')
     ], {
-        cwd,
         env,
     })
 
@@ -33,15 +34,14 @@ export default async function submitWorkflowToArgo(
     await exec('sh', [
         '-c',
         `"/usr/local/bin/argo --kubeconfig ${kubeconfig} get \`cat ${idFile}\` -o=json > ${workflowOutputFile}"`
-            .trim().replace(/\n/gim, ' '),
+            .trim().replace(/\n/gim, ' ').replace(/\s+/gm, ' '),
     ], {
-        cwd,
         env,
     })
 
     core.debug(`Reading workflow results file for ${name}`)
 
-    const resultsFile = await readFileAsync(workflowFile, 'utf-8')
+    const resultsFile = await readFileAsync(workflowOutputFile, 'utf-8')
 
     core.debug(`Parsing workflow results file for ${name}`)
 

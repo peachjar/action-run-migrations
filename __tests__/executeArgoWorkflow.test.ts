@@ -14,7 +14,7 @@ describe('Execute Argo Workflow', () => {
         deployEnv: 'kauai',
         name: 'svc-auth-db',
         workflowFile: 'workflows/migrations/migrate.yml',
-        cwd: './peachjar-aloha',
+        cwd: '/home/repo',
         params: {
             image: 'svc-auth-db:abcd123',
             dbsecret: 'flyway-auth-postgres-env',
@@ -48,21 +48,19 @@ describe('Execute Argo Workflow', () => {
     })
 
     describe('when the workflow succeeds', () => {
-        it('should fail the whole workflow', async () => {
+        it('should return true as a success indicator', async () => {
             const result = await executeArgoWorkflow(workflow, deps, env)
             expect(exec).toHaveBeenCalledTimes(2)
             expect(exec).toHaveBeenCalledWith('sh', [
                 '-c',
-                '"/usr/local/bin/argo --kubeconfig kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml get `cat workflow.svc-auth-db.id` -o=json > /tmp/workflow.svc-auth-db.result.json"',
+                '"/usr/local/bin/argo --kubeconfig /home/repo/kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml submit /home/repo/peachjar-aloha/workflows/migrations/migrate.yml -p image=svc-auth-db:abcd123 -p dbsecret=flyway-auth-postgres-env --wait -o=json | jq -r .metadata.name > workflow.svc-auth-db.id"',
             ], {
-                cwd: './peachjar-aloha',
                 env,
             })
             expect(exec).toHaveBeenCalledWith('sh', [
                 '-c',
-                '"/usr/local/bin/argo --kubeconfig kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml get `cat workflow.svc-auth-db.id` -o=json > /tmp/workflow.svc-auth-db.result.json"',
+                '"/usr/local/bin/argo --kubeconfig /home/repo/kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml get `cat workflow.svc-auth-db.id` -o=json > /tmp/workflow.svc-auth-db.result.json"',
             ], {
-                cwd: './peachjar-aloha',
                 env,
             })
             expect(result).toEqual(true)
