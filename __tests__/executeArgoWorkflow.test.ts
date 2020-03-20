@@ -1,14 +1,14 @@
-import { ReadFileAsyncFn, ExecFn, Core, Deps } from '../src/api'
+import { ExecFn, Core, Deps } from '../src/api'
 
 import executeArgoWorkflow from '../src/executeArgoWorkflow'
 
 describe('Execute Argo Workflow', () => {
 
-    let readFileAsync: ReadFileAsyncFn
     let exec: ExecFn
     let core: Core
     let deps: Deps
-    let resultsFile: Record<string, any>
+    let submitResults: Record<string, any>
+    let workflowResults: Record<string, any>
 
     const workflow = {
         deployEnv: 'kauai',
@@ -24,24 +24,33 @@ describe('Execute Argo Workflow', () => {
     const env = { FOO: 'bar' }
 
     beforeEach(() => {
-        resultsFile = {
+        submitResults = {
+            metadata: {
+                name: 'migrate-foobar-123',
+            }
+        }
+        workflowResults = {
             spec: {
                 status: {
                     phase: 'Succeeded'
                 }
             }
         }
-        exec = jest.fn(() => Promise.resolve(0))
+        exec = jest.fn((cmd: string, args: string[], opts) => {
+            const buffer = Buffer.from(
+                args.includes('submit') ? JSON.stringify(submitResults) : JSON.stringify(workflowResults)
+            )
+            opts!.listeners!.stdout!(buffer)
+            return Promise.resolve(0)
+        }) as any as ExecFn
         core = {
             getInput: jest.fn(),
             debug: jest.fn(),
             info: jest.fn(),
             setFailed: jest.fn()
         }
-        readFileAsync = jest.fn(() => Promise.resolve(JSON.stringify(resultsFile)))
         deps = {
             submitWorkflow: jest.fn(),
-            readFileAsync,
             exec,
             core,
         }
@@ -51,18 +60,18 @@ describe('Execute Argo Workflow', () => {
         it('should return true as a success indicator', async () => {
             const result = await executeArgoWorkflow(workflow, deps, env)
             expect(exec).toHaveBeenCalledTimes(2)
-            expect(exec).toHaveBeenCalledWith('sh', [
-                '-c',
-                '"/usr/local/bin/argo --kubeconfig /home/repo/kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml submit /home/repo/peachjar-aloha/workflows/migrations/migrate.yml -p image=svc-auth-db:abcd123 -p dbsecret=flyway-auth-postgres-env --wait -o=json | jq -r .metadata.name > workflow.svc-auth-db.id"',
-            ], {
-                env,
-            })
-            expect(exec).toHaveBeenCalledWith('sh', [
-                '-c',
-                '"/usr/local/bin/argo --kubeconfig /home/repo/kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml get `cat workflow.svc-auth-db.id` -o=json > /tmp/workflow.svc-auth-db.result.json"',
-            ], {
-                env,
-            })
+            expect(exec).toHaveBeenCalledWith('argo', [
+                '--kubeconfig',
+                '/home/repo/kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml',
+                'submit', '/home/repo/peachjar-aloha/workflows/migrations/migrate.yml',
+                '-p', 'image=svc-auth-db:abcd123', '-p', 'dbsecret=flyway-auth-postgres-env', '--wait',
+                '-o=json'
+            ], expect.anything())
+            expect(exec).toHaveBeenCalledWith('argo', [
+                '--kubeconfig',
+                '/home/repo/kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml',
+                'get', 'migrate-foobar-123', '-o=json',
+            ], expect.anything())
             expect(result).toEqual(true)
         })
     })
@@ -70,7 +79,43 @@ describe('Execute Argo Workflow', () => {
     describe('when the workflow fails', () => {
 
         beforeEach(() => {
-            resultsFile.spec.status.phase = 'Failed'
+            workflowResults.spec.status.phase = 'Failed'
+        })
+
+        it('should fail the whole workflow', async () => {
+            const result = await executeArgoWorkflow(workflow, deps, {})
+            expect(result).toEqual(false)
+        })
+    })
+
+    describe('when the submit command fails', () => {
+
+        beforeEach(() => {
+            exec = jest.fn((cmd: string, args: string[], opts) => {
+                opts!.listeners!.stderr!(Buffer.from('Kaboom'))
+                return Promise.resolve(127)
+            }) as any as ExecFn
+            deps.exec = exec
+        })
+
+        it('should fail the whole workflow', async () => {
+            const result = await executeArgoWorkflow(workflow, deps, {})
+            expect(result).toEqual(false)
+        })
+    })
+
+    describe('when the get info command fails', () => {
+
+        beforeEach(() => {
+            exec = jest.fn((cmd: string, args: string[], opts) => {
+                if (args.includes('submit')) {
+                    opts!.listeners!.stdout!(Buffer.from(JSON.stringify(submitResults) ))
+                    return Promise.resolve(0)
+                }
+                opts!.listeners!.stderr!(Buffer.from('Kaboom'))
+                return Promise.resolve(127)
+            }) as any as ExecFn
+            deps.exec = exec
         })
 
         it('should fail the whole workflow', async () => {

@@ -2314,14 +2314,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const github_1 = __webpack_require__(469);
 const exec_1 = __webpack_require__(986);
-const fs_1 = __webpack_require__(747);
-const util_1 = __webpack_require__(669);
 const executeArgoWorkflow_1 = __importDefault(__webpack_require__(773));
-const readFileAsync = util_1.promisify(fs_1.readFile);
 const deps = {
     core,
     exec: exec_1.exec,
-    readFileAsync,
     submitWorkflow: executeArgoWorkflow_1.default,
 };
 const run_1 = __importDefault(__webpack_require__(861));
@@ -27108,36 +27104,55 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_1 = __webpack_require__(557);
 const path_1 = __webpack_require__(622);
-function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { core, exec, readFileAsync }, env) {
+function shellExec(exec, command, args, env) {
     return __awaiter(this, void 0, void 0, function* () {
-        const idFile = `workflow.${name}.id`;
-        const workflowOutputFile = `/tmp/workflow.${name}.result.json`;
+        const stdoutBuffer = [];
+        const stderrBuffer = [];
+        const exitCode = yield exec(command, args, {
+            env,
+            listeners: {
+                stdout(data) {
+                    stdoutBuffer.push(data.toString());
+                },
+                stderr(data) {
+                    stderrBuffer.push(data.toString());
+                }
+            },
+        });
+        return [exitCode, stdoutBuffer.join(''), stderrBuffer.join('')];
+    });
+}
+function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { core, exec }, env) {
+    return __awaiter(this, void 0, void 0, function* () {
         const kubeconfig = path_1.join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`);
         const workflowFileAbsolutePath = path_1.join(cwd, './peachjar-aloha/', workflowFile);
         core.debug(`Running workflow for ${name}`);
-        const paramsString = Object.entries(params)
-            .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), [])
-            .join(' ');
-        yield exec('sh', [
-            '-c',
-            `"/usr/local/bin/argo --kubeconfig ${kubeconfig} submit ${workflowFileAbsolutePath} \
-         ${paramsString} --wait -o=json | jq -r .metadata.name > ${idFile}"`
-                .trim().replace(/\n/gim, ' ').replace(/\s+/gm, ' ')
-        ], {
-            env,
-        });
+        const [submitExitCode, submitStdout, submitStderr] = yield shellExec(exec, 'argo', [
+            '--kubeconfig', kubeconfig, 'submit', workflowFileAbsolutePath,
+            ...Object.entries(params)
+                .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), []),
+            '--wait', '-o=json',
+        ], env);
+        if (submitExitCode > 0) {
+            core.debug('Argo submit failed.');
+            core.info(submitStderr);
+            return false;
+        }
+        const result = JSON.parse(submitStdout.trim());
+        const workflowId = lodash_1.get(result, 'metadata.name');
         core.debug(`Getting results for ${name}`);
-        yield exec('sh', [
-            '-c',
-            `"/usr/local/bin/argo --kubeconfig ${kubeconfig} get \`cat ${idFile}\` -o=json > ${workflowOutputFile}"`
-                .trim().replace(/\n/gim, ' ').replace(/\s+/gm, ' '),
-        ], {
-            env,
-        });
-        core.debug(`Reading workflow results file for ${name}`);
-        const resultsFile = yield readFileAsync(workflowOutputFile, 'utf-8');
+        const [getExitCode, getStdout, getStderr] = yield shellExec(exec, 'argo', [
+            '--kubeconfig', kubeconfig,
+            'get', workflowId,
+            '-o=json'
+        ], env);
+        if (getExitCode > 0) {
+            core.debug('Unable to retrieve workflow status.');
+            core.info(getStderr);
+            return false;
+        }
         core.debug(`Parsing workflow results file for ${name}`);
-        const results = JSON.parse(resultsFile);
+        const results = JSON.parse(getStdout.trim());
         const status = lodash_1.get(results, 'spec.status.phase');
         core.debug(`Status for workflow ${name}: ${status}`);
         return status === 'Succeeded';

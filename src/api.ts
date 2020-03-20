@@ -2,7 +2,6 @@ import * as im from '@actions/exec/lib/interfaces'
 
 export type Environment = { [key: string]: string }
 export type ExecFn = (commandLine: string, args?: string[], options?: im.ExecOptions) => Promise<number>
-export type ReadFileAsyncFn = (file: string, encoding: string) => Promise<string>
 
 export type Workflow = {
     deployEnv: string,
@@ -27,7 +26,6 @@ export type Core = {
 export type Deps = {
     core: Core,
     exec: ExecFn,
-    readFileAsync: ReadFileAsyncFn,
     submitWorkflow: SubmitWorkflowFn,
 }
 

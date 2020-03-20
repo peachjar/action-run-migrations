@@ -1,51 +1,74 @@
-import { Deps, Environment, Workflow } from './api'
-
+import { Deps, Environment, ExecFn, Workflow } from './api'
 import { get } from 'lodash'
 import { join } from 'path'
 
+async function shellExec(
+    exec: ExecFn,
+    command: string,
+    args: string[],
+    env: Environment
+): Promise<[number, string, string]> {
+    const stdoutBuffer: string[] = []
+    const stderrBuffer: string[] = []
+    const exitCode = await exec(command, args, {
+        env,
+        listeners: {
+            stdout(data) {
+                stdoutBuffer.push(data.toString())
+            },
+            stderr(data) {
+                stderrBuffer.push(data.toString())
+            }
+        },
+    })
+    return [exitCode, stdoutBuffer.join(''), stderrBuffer.join('')]
+}
+
 export default async function submitWorkflowToArgo(
     { deployEnv, cwd, name, params, workflowFile }: Workflow,
-    { core, exec, readFileAsync }: Deps,
+    { core, exec }: Deps,
     env: Environment
 ): Promise<boolean> {
 
-    const idFile = `workflow.${name}.id`
-    const workflowOutputFile = `/tmp/workflow.${name}.result.json`
     const kubeconfig = join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`)
     const workflowFileAbsolutePath = join(cwd, './peachjar-aloha/', workflowFile)
 
     core.debug(`Running workflow for ${name}`)
 
-    const paramsString = Object.entries(params)
-        .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), [] as string[])
-        .join(' ')
+    const [submitExitCode, submitStdout, submitStderr] = await shellExec(exec, 'argo', [
+        '--kubeconfig', kubeconfig, 'submit', workflowFileAbsolutePath,
+        ...Object.entries(params)
+            .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), [] as string[]),
+        '--wait', '-o=json',
+    ], env)
 
-    await exec('sh', [
-        '-c',
-        `"/usr/local/bin/argo --kubeconfig ${kubeconfig} submit ${workflowFileAbsolutePath} \
-         ${paramsString} --wait -o=json | jq -r .metadata.name > ${idFile}"`
-            .trim().replace(/\n/gim, ' ').replace(/\s+/gm, ' ')
-    ], {
-        env,
-    })
+    if (submitExitCode > 0) {
+        core.debug('Argo submit failed.')
+        core.info(submitStderr)
+        return false
+    }
+
+    const result = JSON.parse(submitStdout.trim())
+
+    const workflowId = get(result, 'metadata.name')
 
     core.debug(`Getting results for ${name}`)
 
-    await exec('sh', [
-        '-c',
-        `"/usr/local/bin/argo --kubeconfig ${kubeconfig} get \`cat ${idFile}\` -o=json > ${workflowOutputFile}"`
-            .trim().replace(/\n/gim, ' ').replace(/\s+/gm, ' '),
-    ], {
-        env,
-    })
+    const [getExitCode, getStdout, getStderr] = await shellExec(exec, 'argo', [
+        '--kubeconfig', kubeconfig,
+        'get', workflowId,
+        '-o=json'
+    ], env)
 
-    core.debug(`Reading workflow results file for ${name}`)
-
-    const resultsFile = await readFileAsync(workflowOutputFile, 'utf-8')
+    if (getExitCode > 0) {
+        core.debug('Unable to retrieve workflow status.')
+        core.info(getStderr)
+        return false
+    }
 
     core.debug(`Parsing workflow results file for ${name}`)
 
-    const results = JSON.parse(resultsFile)
+    const results = JSON.parse(getStdout.trim())
 
     const status = get(results, 'spec.status.phase')
 
