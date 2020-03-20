@@ -26,6 +26,14 @@ jobs:
       with:
         githubUsername: ${{ secrets.GITHUB_DEPLOY_USER }}
         githubToken: ${{ secrets.GITHUB_DEPLOY_TOKEN }}
+    - run: |
+        ls /usr/local/bin
+        ls kilauea/
+        ls peachjar-aloha/
+        /usr/local/bin/argo --kubeconfig kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml \
+          submit workflows/migrations/migrate.yml \
+          -p image=noop:db2 -p dbsecret=flyway-noop-postgres-env \
+          --wait -o=json | jq -r .metadata.name > workflow.noop.id
     - uses: ./
       with:
         awsAccessKeyId: ${{ secrets.AWS_ACCESS_KEY_ID }}
