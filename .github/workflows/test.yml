@@ -26,6 +26,13 @@ jobs:
       with:
         githubUsername: ${{ secrets.GITHUB_DEPLOY_USER }}
         githubToken: ${{ secrets.GITHUB_DEPLOY_TOKEN }}
+    - run: |
+        echo "PWD"
+        pwd
+        echo "LS Kilueua"
+        ls kilauea
+        echo "LS Aloha"
+        ls peachjar-aloha
     - uses: ./
       with:
         awsAccessKeyId: ${{ secrets.AWS_ACCESS_KEY_ID }}
