@@ -41659,13 +41659,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_1 = __webpack_require__(557);
-function getOptionalMigrationsFromEnvironment(core) {
+function getOptionalMigrationsFromEnvironment(core, gitsha) {
     const migrations = [];
     for (let i = 2; i < 4; i++) {
         const image = core.getInput(`mig_image_${i}`);
+        const maybeTag = core.getInput(`mig_tag_${i}`);
+        const tag = maybeTag || gitsha;
         const secret = core.getInput(`mig_secret_${i}`);
         if (image && secret) {
-            migrations.push([image, secret]);
+            migrations.push([image, tag, secret]);
         }
     }
     return migrations;
@@ -41697,13 +41699,14 @@ function run(deps, context, env) {
             if (!migSecret) {
                 return core.setFailed('First migration secret (mig_secret) required.');
             }
-            const optionalMigrations = getOptionalMigrationsFromEnvironment(core);
-            const migrations = [[migImage, migSecret]].concat(optionalMigrations);
-            const results = yield Promise.all(migrations.map(([image, secret]) => submitWorkflow({
+            const migTag = core.getInput('mig_tag');
+            const optionalMigrations = getOptionalMigrationsFromEnvironment(core, gitsha);
+            const migrations = [[migImage, migTag || gitsha, migSecret]].concat(optionalMigrations);
+            const results = yield Promise.all(migrations.map(([image, tag, secret]) => submitWorkflow({
                 name: image,
                 deployEnv: environment,
                 params: {
-                    image: `${image}:${gitsha}`,
+                    image: `${image}:${tag}`,
                     dbsecret: secret,
                 },
                 workflowFile: 'workflows/migrations/migrate.yml',
