@@ -27113,24 +27113,22 @@ function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { 
         const workflowOutputFile = `/tmp/workflow.${name}.result.json`;
         const kubeconfig = `kilauea/kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`;
         core.debug(`Running workflow for ${name}`);
-        yield exec('argo', [
-            '--kubeconfig',
-            kubeconfig,
-            'submit',
-            workflowFile,
-            ...Object.entries(params)
-                .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), []),
-            '--wait', '-o=json',
-            '|', 'jq', '-r', '.metadata.name', '>', idFile,
+        const paramsString = Object.entries(params)
+            .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), [])
+            .join(' ');
+        yield exec('sh', [
+            '-c',
+            `"argo --kubeconfig ${kubeconfig} submit ${workflowFile} \
+         ${paramsString} --wait -o=json | jq -r .metadata.name > ${idFile}
+        "`,
         ], {
             cwd,
             env,
         });
         core.debug(`Getting results for ${name}`);
-        yield exec('argo', [
-            '--kubeconfig',
-            kubeconfig,
-            'get', `\`cat ${idFile}\``, '-o=json', '>', workflowOutputFile,
+        yield exec('sh', [
+            '-c',
+            `"argo --kubeconfig ${kubeconfig} get \`cat ${idFile}\` -o=json > ${workflowOutputFile}"`,
         ], {
             cwd,
             env,
