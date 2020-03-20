@@ -27153,7 +27153,7 @@ function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { 
         }
         core.debug(`Parsing workflow results file for ${name}`);
         const results = JSON.parse(getStdout.trim());
-        const status = lodash_1.get(results, 'spec.status.phase');
+        const status = lodash_1.get(results, 'status.phase');
         core.debug(`Status for workflow ${name}: ${status}`);
         return status === 'Succeeded';
     });

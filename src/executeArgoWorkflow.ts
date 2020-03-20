@@ -70,7 +70,7 @@ export default async function submitWorkflowToArgo(
 
     const results = JSON.parse(getStdout.trim())
 
-    const status = get(results, 'spec.status.phase')
+    const status = get(results, 'status.phase')
 
     core.debug(`Status for workflow ${name}: ${status}`)
 

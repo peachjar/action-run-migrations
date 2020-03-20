@@ -30,10 +30,8 @@ describe('Execute Argo Workflow', () => {
             }
         }
         workflowResults = {
-            spec: {
-                status: {
-                    phase: 'Succeeded'
-                }
+            status: {
+                phase: 'Succeeded'
             }
         }
         exec = jest.fn((cmd: string, args: string[], opts) => {
@@ -79,7 +77,7 @@ describe('Execute Argo Workflow', () => {
     describe('when the workflow fails', () => {
 
         beforeEach(() => {
-            workflowResults.spec.status.phase = 'Failed'
+            workflowResults.status.phase = 'Failed'
         })
 
         it('should fail the whole workflow', async () => {
