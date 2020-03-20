@@ -4,16 +4,18 @@ import { Deps, Core } from './api'
 
 import ProcessEnv = NodeJS.ProcessEnv
 
-type ImageAndSecret = [string, string]
+type ImageTagAndSecret = [string, string, string]
 
-function getOptionalMigrationsFromEnvironment(core: Core): ImageAndSecret[] {
-    const migrations: ImageAndSecret[] = []
+function getOptionalMigrationsFromEnvironment(core: Core, gitsha: string): ImageTagAndSecret[] {
+    const migrations: ImageTagAndSecret[] = []
 
     for (let i = 2; i < 4; i++) {
         const image = core.getInput(`mig_image_${i}`)
+        const maybeTag = core.getInput(`mig_tag_${i}`)
+        const tag = maybeTag || gitsha
         const secret = core.getInput(`mig_secret_${i}`)
         if (image && secret) {
-            migrations.push([image, secret])
+            migrations.push([image, tag, secret])
         }
     }
 
@@ -63,17 +65,19 @@ export default async function run(
             return core.setFailed('First migration secret (mig_secret) required.')
         }
 
-        const optionalMigrations = getOptionalMigrationsFromEnvironment(core)
+        const migTag = core.getInput('mig_tag')
 
-        const migrations = [[migImage, migSecret]].concat(optionalMigrations)
+        const optionalMigrations = getOptionalMigrationsFromEnvironment(core, gitsha)
+
+        const migrations = [[migImage, migTag || gitsha, migSecret]].concat(optionalMigrations)
 
         const results = await Promise.all(
-            migrations.map(([image, secret]) =>
+            migrations.map(([image, tag, secret]) =>
                 submitWorkflow({
                     name: image,
                     deployEnv: environment,
                     params: {
-                        image: `${image}:${gitsha}`,
+                        image: `${image}:${tag}`,
                         dbsecret: secret,
                     },
                     workflowFile: 'workflows/migrations/migrate.yml',

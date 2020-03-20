@@ -173,6 +173,46 @@ describe('Run function', () => {
         })
     })
 
+    describe('when a tag override is specified', () => {
+        beforeEach(() => {
+            core.getInput = jest.fn((key: string) => {
+                switch (key) {
+                    case 'awsAccessKeyId': return awsAccessKeyId
+                    case 'awsSecretAccessKey': return awsSecretAccessKey
+                    case 'environment': return environment
+                    case 'mig_image': return migImage
+                    case 'mig_tag': return 'latest'
+                    case 'mig_secret': return migSecret
+                    default: return ''
+                }
+            })
+        })
+
+        it('should use the override instead of the gitsha', async () => {
+            await run(deps, context, { FOO: 'bar' })
+            expect(core.setFailed).not.toHaveBeenCalled()
+            expect(submitWorkflow).toHaveBeenCalledTimes(1)
+            expect(submitWorkflow).toHaveBeenCalledWith(
+                {
+                    deployEnv: environment,
+                    name: migImage,
+                    workflowFile: 'workflows/migrations/migrate.yml',
+                    cwd: './peachjar-aloha',
+                    params: {
+                        image: 'svc-auth-db:latest',
+                        dbsecret: migSecret,
+                    },
+                },
+                expect.anything(),
+                {
+                    FOO: 'bar',
+                    AWS_ACCESS_KEY_ID: awsAccessKeyId,
+                    AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
+                }
+            )
+        })
+    })
+
     describe('when multiple migrations are specified', () => {
         beforeEach(() => {
             core.getInput = jest.fn((key: string) => {
@@ -183,6 +223,7 @@ describe('Run function', () => {
                     case 'mig_image': return migImage
                     case 'mig_secret': return migSecret
                     case 'mig_image_2': return 'foobar'
+                    case 'mig_tag_2': return 'foobaz'
                     case 'mig_secret_2': return 'foobar-env'
                     case 'mig_image_3': return 'yomama'
                     case 'mig_secret_3': return 'yomama-env'
@@ -220,7 +261,7 @@ describe('Run function', () => {
                     workflowFile: 'workflows/migrations/migrate.yml',
                     cwd: './peachjar-aloha',
                     params: {
-                        image: 'foobar:fa1e24f',
+                        image: 'foobar:foobaz',
                         dbsecret: 'foobar-env',
                     },
                 },

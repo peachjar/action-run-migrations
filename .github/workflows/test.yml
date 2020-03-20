@@ -32,4 +32,6 @@ jobs:
         awsAccessKeyId: ${{ secrets.AWS_ACCESS_KEY_ID }}
         awsSecretAccessKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         environment: kauai
-        migrations: noop-db=flyway-noop-postgres-env
+        mig_image: noop
+        mig_tag: db2
+        mig_secret: flyway-noop-postgres-env

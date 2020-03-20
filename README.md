@@ -20,6 +20,19 @@ with:
     mig_secret: flyway-foo-postgres-env
 ```
 
+If you want to override the tag of the DB image, specify the tag like this:
+
+```
+uses: peachjar/action-run-migrations@v1
+with:
+    awsAccessKeyId: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    awsSecretAccessKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    environment: kauai
+    mig_image: svc-foo-db
+    mig_tag: foobar
+    mig_secret: flyway-foo-postgres-env
+```
+
 If you have multiple migration workflows to run, add up to 3 by appending the index number (starting at 2) to the end of the param name.
 
 ```
@@ -33,5 +46,6 @@ with:
     mig_image_2: svc-foo-v1-db
     mig_secret_2: flyway-foo-mysql-env
     mig_image_3: svc-foo-timescale-db
+    mig_tag_3: foobar
     mig_secret_3: flyway-foo-timescale-env
 ```
