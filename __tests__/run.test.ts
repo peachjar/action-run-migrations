@@ -1,22 +1,22 @@
 import { Context } from '@actions/github/lib/context'
+import { ReadFileAsyncFn, ExecFn, Core, SubmitWorkflowFn, Deps } from '../src/api'
 
-import run, { ExecFn } from '../src/run'
+import run from '../src/run'
 
 describe('Run function', () => {
 
     let context: Context
-    let core: {
-        getInput: (key: string, opts?: { required: boolean }) => string
-        debug: (...args: any[]) => void
-        info: (...args: any[]) => void
-        setFailed: (message: string) => void
-        [k: string]: any
-    }
+    let core: Core
+    let readFileAsync: ReadFileAsyncFn
+    let submitWorkflow: SubmitWorkflowFn
     let exec: ExecFn
+    let deps: Deps
 
     const awsAccessKeyId = 'abcd1234'
     const awsSecretAccessKey = 'adfasdfasfasfasdfasdfasdfasdfasdf'
     const environment = 'kauai'
+    const migImage = 'svc-auth-db'
+    const migSecret = 'flyway-auth-postgres-env'
 
     beforeEach(() => {
         exec = jest.fn(() => Promise.resolve(0))
@@ -30,6 +30,8 @@ describe('Run function', () => {
                     case 'awsAccessKeyId': return awsAccessKeyId
                     case 'awsSecretAccessKey': return awsSecretAccessKey
                     case 'environment': return environment
+                    case 'mig_image': return migImage
+                    case 'mig_secret': return migSecret
                     default: return ''
                 }
             }),
@@ -37,30 +39,14 @@ describe('Run function', () => {
             info: jest.fn(),
             setFailed: jest.fn()
         }
-    })
-
-    describe('when only the mandatory inputs are supplied', () => {
-        it('should use repository default values', async () => {
-            await run(exec, context, core, { FOO: 'bar' })
-            expect(exec).toHaveBeenCalledWith('helm', [
-                '--kubeconfig',
-                `../kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml`,
-                'upgrade', 'svc-foobar', './svc-foobar',
-                '--set-string', `image.tag=git-fa1e24f`,
-                '--set-string', `gitsha="fa1e24f"`,
-                '--set-string', `image.registryAndName=docker.pkg.github.com/peachjar/peachjar-svc-foobar/svc-foobar`,
-                '--set-string', `image.pullSecret=peachjar-eks-github-pull-secret`,
-                '--wait', '--timeout', '600',
-            ], {
-                cwd: 'peachjar-aloha/',
-                env: {
-                    FOO: 'bar',
-                    AWS_ACCESS_KEY_ID: awsAccessKeyId,
-                    AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
-                },
-            })
-            expect(core.setFailed).not.toHaveBeenCalled()
-        })
+        readFileAsync = jest.fn()
+        submitWorkflow = jest.fn(() => Promise.resolve(true))
+        deps = {
+            submitWorkflow,
+            readFileAsync,
+            exec,
+            core,
+        }
     })
 
     describe('when the awsAccessKeyId is invalid', () => {
@@ -70,13 +56,15 @@ describe('Run function', () => {
                     case 'awsAccessKeyId': return ''
                     case 'awsSecretAccessKey': return awsSecretAccessKey
                     case 'environment': return environment
+                    case 'mig_image': return migImage
+                    case 'mig_secret': return migSecret
                     default: return ''
                 }
             })
         })
 
         it('should fail the action', async () => {
-            await run(exec, context, core, { FOO: 'bar' })
+            await run(deps, context, { FOO: 'bar' })
             expect(core.setFailed).toHaveBeenCalled()
         })
     })
@@ -88,13 +76,15 @@ describe('Run function', () => {
                     case 'awsAccessKeyId': return awsAccessKeyId
                     case 'awsSecretAccessKey': return ''
                     case 'environment': return environment
+                    case 'mig_image': return migImage
+                    case 'mig_secret': return migSecret
                     default: return ''
                 }
             })
         })
 
         it('should fail the action', async () => {
-            await run(exec, context, core, { FOO: 'bar' })
+            await run(deps, context, { FOO: 'bar' })
             expect(core.setFailed).toHaveBeenCalled()
         })
     })
@@ -106,112 +96,188 @@ describe('Run function', () => {
                     case 'awsAccessKeyId': return awsAccessKeyId
                     case 'awsSecretAccessKey': return awsSecretAccessKey
                     case 'environment': return ''
+                    case 'mig_image': return migImage
+                    case 'mig_secret': return migSecret
                     default: return ''
                 }
             })
         })
 
         it('should fail the action', async () => {
-            await run(exec, context, core, { FOO: 'bar' })
+            await run(deps, context, { FOO: 'bar' })
             expect(core.setFailed).toHaveBeenCalled()
         })
     })
 
-    describe('when the defaults are overridden', () => {
+    describe('when image is not present', () => {
         beforeEach(() => {
             core.getInput = jest.fn((key: string) => {
                 switch (key) {
                     case 'awsAccessKeyId': return awsAccessKeyId
                     case 'awsSecretAccessKey': return awsSecretAccessKey
                     case 'environment': return environment
-                    case 'timeout': return '900'
-                    case 'imagePullSecret': return 'dockerhub-secret'
-                    case 'helmChartPath': return './helm/foobaz'
-                    case 'helmReleaseName': return 'circus'
-                    case 'dockerImage': return 'peachjar/foobaz'
-                    case 'dockerTag': return 'v1.2.3'
+                    case 'mig_secret': return migSecret
                     default: return ''
                 }
             })
-        })
-
-        it('should use the supplied inputs', async () => {
-            await run(exec, context, core, { FOO: 'bar' })
-            expect(exec).toHaveBeenCalledWith('helm', [
-                '--kubeconfig',
-                `../kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml`,
-                'upgrade', 'circus', './helm/foobaz',
-                '--set-string', `image.tag=v1.2.3`,
-                '--set-string', `gitsha="fa1e24f"`,
-                '--set-string', `image.registryAndName=peachjar/foobaz`,
-                '--set-string', `image.pullSecret=dockerhub-secret`,
-                '--wait', '--timeout', '900',
-            ], {
-                cwd: 'peachjar-aloha/',
-                env: {
-                    FOO: 'bar',
-                    AWS_ACCESS_KEY_ID: awsAccessKeyId,
-                    AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
-                },
-            })
-            expect(core.setFailed).not.toHaveBeenCalled()
-        })
-    })
-
-    describe('when setString options are supplied', () => {
-        beforeEach(() => {
-            core.getInput = jest.fn((key: string) => {
-                switch (key) {
-                    case 'awsAccessKeyId': return awsAccessKeyId
-                    case 'awsSecretAccessKey': return awsSecretAccessKey
-                    case 'environment': return environment
-                    case 'setString1': return 'foo=baz'
-                    case 'setString2': return 'jo=mama'
-                    case 'setString4': return 'hello="world"'
-                    case 'setString5': return '  wow=spaces  '
-                    default: return ''
-                }
-            })
-        })
-
-        it('should add valid --set-string options to the Helm command', async () => {
-            await run(exec, context, core, { FOO: 'bar' })
-            expect(exec).toHaveBeenCalledWith('helm', [
-                '--kubeconfig',
-                `../kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml`,
-                'upgrade', 'svc-foobar', './svc-foobar',
-                '--set-string', `image.tag=git-fa1e24f`,
-                '--set-string', `gitsha="fa1e24f"`,
-                '--set-string', `image.registryAndName=docker.pkg.github.com/peachjar/peachjar-svc-foobar/svc-foobar`,
-                '--set-string', `image.pullSecret=peachjar-eks-github-pull-secret`,
-                '--set-string', 'foo=baz',
-                '--set-string', 'jo=mama',
-                '--set-string', 'hello="world"',
-                '--set-string', 'wow=spaces',
-                '--wait', '--timeout', '600',
-            ], {
-                cwd: 'peachjar-aloha/',
-                env: {
-                    FOO: 'bar',
-                    AWS_ACCESS_KEY_ID: awsAccessKeyId,
-                    AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
-                },
-            })
-            expect(core.setFailed).not.toHaveBeenCalled()
-        })
-    })
-
-    describe('when exec throws an error', () => {
-
-        const error = new Error('Kaboom!')
-
-        beforeEach(() => {
-            exec = jest.fn(() => Promise.reject(error))
         })
 
         it('should fail the action', async () => {
-            await run(exec, context, core, { FOO: 'bar' })
-            expect(core.setFailed).toHaveBeenCalledWith(error.message)
+            await run(deps, context, { FOO: 'bar' })
+            expect(core.setFailed).toHaveBeenCalled()
+        })
+    })
+
+    describe('when secret is not present', () => {
+        beforeEach(() => {
+            core.getInput = jest.fn((key: string) => {
+                switch (key) {
+                    case 'awsAccessKeyId': return awsAccessKeyId
+                    case 'awsSecretAccessKey': return awsSecretAccessKey
+                    case 'environment': return environment
+                    case 'mig_image': return migImage
+                    default: return ''
+                }
+            })
+        })
+
+        it('should fail the action', async () => {
+            await run(deps, context, { FOO: 'bar' })
+            expect(core.setFailed).toHaveBeenCalled()
+        })
+    })
+
+    describe('when only the mandatory image and secret is supplied', () => {
+        it('should submit a single workflow', async () => {
+            await run(deps, context, { FOO: 'bar' })
+            expect(core.setFailed).not.toHaveBeenCalled()
+            expect(submitWorkflow).toHaveBeenCalledTimes(1)
+            expect(submitWorkflow).toHaveBeenCalledWith(
+                {
+                    deployEnv: environment,
+                    name: migImage,
+                    workflowFile: 'workflows/migrations/migrate.yml',
+                    cwd: './peachjar-aloha',
+                    params: {
+                        image: 'svc-auth-db:fa1e24f',
+                        dbsecret: migSecret,
+                    },
+                },
+                expect.anything(),
+                {
+                    FOO: 'bar',
+                    AWS_ACCESS_KEY_ID: awsAccessKeyId,
+                    AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
+                }
+            )
+        })
+    })
+
+    describe('when multiple migrations are specified', () => {
+        beforeEach(() => {
+            core.getInput = jest.fn((key: string) => {
+                switch (key) {
+                    case 'awsAccessKeyId': return awsAccessKeyId
+                    case 'awsSecretAccessKey': return awsSecretAccessKey
+                    case 'environment': return environment
+                    case 'mig_image': return migImage
+                    case 'mig_secret': return migSecret
+                    case 'mig_image_2': return 'foobar'
+                    case 'mig_secret_2': return 'foobar-env'
+                    case 'mig_image_3': return 'yomama'
+                    case 'mig_secret_3': return 'yomama-env'
+                    default: return ''
+                }
+            })
+        })
+
+        it('should submit a job for each migration', async () => {
+            await run(deps, context, { FOO: 'bar' })
+            expect(core.setFailed).not.toHaveBeenCalled()
+            expect(submitWorkflow).toHaveBeenCalledTimes(3)
+            expect(submitWorkflow).toHaveBeenCalledWith(
+                {
+                    deployEnv: environment,
+                    name: migImage,
+                    workflowFile: 'workflows/migrations/migrate.yml',
+                    cwd: './peachjar-aloha',
+                    params: {
+                        image: 'svc-auth-db:fa1e24f',
+                        dbsecret: migSecret,
+                    },
+                },
+                expect.anything(),
+                {
+                    FOO: 'bar',
+                    AWS_ACCESS_KEY_ID: awsAccessKeyId,
+                    AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
+                }
+            )
+            expect(submitWorkflow).toHaveBeenCalledWith(
+                {
+                    deployEnv: environment,
+                    name: 'foobar',
+                    workflowFile: 'workflows/migrations/migrate.yml',
+                    cwd: './peachjar-aloha',
+                    params: {
+                        image: 'foobar:fa1e24f',
+                        dbsecret: 'foobar-env',
+                    },
+                },
+                expect.anything(),
+                {
+                    FOO: 'bar',
+                    AWS_ACCESS_KEY_ID: awsAccessKeyId,
+                    AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
+                }
+            )
+            expect(submitWorkflow).toHaveBeenCalledWith(
+                {
+                    deployEnv: environment,
+                    name: 'yomama',
+                    workflowFile: 'workflows/migrations/migrate.yml',
+                    cwd: './peachjar-aloha',
+                    params: {
+                        image: 'yomama:fa1e24f',
+                        dbsecret: 'yomama-env',
+                    },
+                },
+                expect.anything(),
+                {
+                    FOO: 'bar',
+                    AWS_ACCESS_KEY_ID: awsAccessKeyId,
+                    AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
+                }
+            )
+        })
+
+        describe('when any of the workflows fail', () => {
+            beforeEach(() => {
+                let calls = 0
+                submitWorkflow = jest.fn(() => {
+                    calls += 1
+                    return Promise.resolve(calls !== 2)
+                })
+                deps.submitWorkflow = submitWorkflow
+            })
+
+            it('should fail the job', async () => {
+                await run(deps, context, { FOO: 'bar' })
+                expect(core.setFailed).toHaveBeenCalled()
+                expect(submitWorkflow).toHaveBeenCalledTimes(3)
+            })
+        })
+    })
+
+    describe('when an error is raised from the workflow', () => {
+        beforeEach(() => {
+            submitWorkflow = jest.fn(() => Promise.reject(new Error('Kaboom')))
+            deps.submitWorkflow = submitWorkflow
+        })
+
+        it('should fail the action', async () => {
+            await run(deps, context, { FOO: 'bar' })
+            expect(core.setFailed).toHaveBeenCalled()
         })
     })
 })

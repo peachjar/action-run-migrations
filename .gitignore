@@ -100,3 +100,6 @@ lib/**/*
 
 .idea/
 *.iml
+
+peachjar-aloha/
+kilauea/

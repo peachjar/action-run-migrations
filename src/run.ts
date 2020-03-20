@@ -1,102 +1,33 @@
-import { get, isArray, first, identity } from 'lodash'
+import { isArray, first, identity } from 'lodash'
 import { Context } from '@actions/github/lib/context'
-import { parse as parseQueryString } from 'querystring'
+import { Deps, Core } from './api'
 
-import * as im from '@actions/exec/lib/interfaces'
 import ProcessEnv = NodeJS.ProcessEnv
 
-export type ExecFn = (commandLine: string, args?: string[], options?: im.ExecOptions) => Promise<number>
-export type ReadFileAsyncFn = (file: string, encoding: string) => Promise<string>
+type ImageAndSecret = [string, string]
 
-type Core = {
-    getInput: (key: string, opts?: { required: boolean }) => string,
-    info: (...args: any[]) => void,
-    debug: (...args: any[]) => void,
-    setFailed: (message: string) => void,
-    [k: string]: any,
-}
+function getOptionalMigrationsFromEnvironment(core: Core): ImageAndSecret[] {
+    const migrations: ImageAndSecret[] = []
 
-type Migration = {
-    awsAccessKeyId: string,
-    awsSecretAccessKey: string,
-    gitsha: string,
-    environment: string,
-    image: string,
-    secret: string,
-}
+    for (let i = 2; i < 4; i++) {
+        const image = core.getInput(`mig_image_${i}`)
+        const secret = core.getInput(`mig_secret_${i}`)
+        if (image && secret) {
+            migrations.push([image, secret])
+        }
+    }
 
-async function runWorkflow(
-    core: Core,
-    exec: ExecFn,
-    readFileAsync: ReadFileAsyncFn,
-    env: ProcessEnv,
-    {
-        awsAccessKeyId,
-        awsSecretAccessKey,
-        gitsha,
-        environment,
-        image,
-        secret,
-    }: Migration
-): Promise<boolean> {
-    core.info(`Running migrations for [${image}] with secret file [${secret}]`)
-
-    const idFile = `workflow.${image}.id`
-    const workflowFile = `/tmp/workflow.${image}.result.json`
-
-    const childEnv = Object.assign({}, env, {
-        AWS_ACCESS_KEY_ID: awsAccessKeyId,
-        AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
-    }) as { [k: string]: string }
-
-    core.debug(`Running workflow for ${image}`)
-
-    await exec('argo', [
-        '--kubeconfig',
-        `../kilauea/kubefiles/${environment}/kubectl_configs/${environment}-kube-config-admins.yml`,
-        'submit', 'workflows/migrations/migrate.yml',
-        '-p', `image="${image}:${gitsha}`,
-        '-p', `dbsecret="${secret}"`,
-        '--wait', '-o=json',
-        '|', 'jq', '-r', '.metadata.name', '>', idFile,
-    ], {
-        cwd: 'peachjar-aloha/',
-        env: childEnv,
-    })
-
-    core.debug(`Getting results for ${image}`)
-
-    await exec('argo', [
-        '--kubeconfig',
-        `../kilauea/kubefiles/${environment}/kubectl_configs/${environment}-kube-config-admins.yml`,
-         'get', `\`cat ${idFile}\``, '-o=json', '>', workflowFile,
-    ], {
-        cwd: 'peachjar-aloha/',
-        env: childEnv,
-    })
-
-    core.debug(`Reading workflow results file for ${image}`)
-
-    const resultsFile = await readFileAsync(workflowFile, 'utf-8')
-
-    core.debug(`Parsing workflow results file for ${image}`)
-
-    const results = JSON.parse(resultsFile)
-
-    const status = get(results, 'spec.status.phase')
-
-    core.debug(`Status for workflow ${image}: ${status}`)
-
-    return status === 'Succeeded'
+    return migrations
 }
 
 export default async function run(
-    exec: ExecFn,
-    readFileAsync: ReadFileAsyncFn,
+    deps: Deps,
     context: Context,
-    core: Core,
     env: ProcessEnv
 ): Promise<any> {
+
+    const { core, submitWorkflow } = deps
+
     try {
         core.info('Deploying service to environment.')
 
@@ -107,6 +38,11 @@ export default async function run(
             return core.setFailed('AWS credentials are invalid.')
         }
 
+        const childEnv = Object.assign({}, env, {
+            AWS_ACCESS_KEY_ID: awsAccessKeyId,
+            AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
+        }) as { [k: string]: string }
+
         const gitsha = context.sha.slice(0, 7)
 
         const environment = core.getInput('environment', { required: true })
@@ -115,36 +51,35 @@ export default async function run(
             return core.setFailed('Environment not specified or invalid.')
         }
 
-        const migrationsString = core.getInput('migrations', { required: true })
+        const migImage = core.getInput('mig_image', { required: true })
 
-        if (!migrationsString) {
-            return core.setFailed('Migrations not specified.')
+        if (!migImage) {
+            return core.setFailed('First migration image (mig_image) required.')
         }
 
-        const migrations = Object.entries(parseQueryString(migrationsString))
+        const migSecret = core.getInput('mig_secret', { required: true })
 
-        if (migrations.length === 0) {
-            return core.setFailed('No migrations specified; check syntax.')
+        if (!migSecret) {
+            return core.setFailed('First migration secret (mig_secret) required.')
         }
 
-        const migrationsIsValid = migrations.every(([image, secret]) => image && secret)
+        const optionalMigrations = getOptionalMigrationsFromEnvironment(core)
 
-        if (migrationsIsValid) {
-            return core.setFailed('Migrations property is incorrect; check syntax.')
-        }
+        const migrations = [[migImage, migSecret]].concat(optionalMigrations)
 
         const results = await Promise.all(
-            migrations.map(([image, maybeArray]) => {
-                const secret = (isArray(maybeArray) ? first(maybeArray) : maybeArray) as string
-                return runWorkflow(core, exec, readFileAsync, env, {
-                    image,
-                    secret,
-                    awsAccessKeyId,
-                    awsSecretAccessKey,
-                    environment,
-                    gitsha,
-                })
-            })
+            migrations.map(([image, secret]) =>
+                submitWorkflow({
+                    name: image,
+                    deployEnv: environment,
+                    params: {
+                        image: `${image}:${gitsha}`,
+                        dbsecret: secret,
+                    },
+                    workflowFile: 'workflows/migrations/migrate.yml',
+                    cwd: './peachjar-aloha',
+                }, deps, childEnv)
+            )
         )
 
         if (!results.every(identity)) {
