@@ -53,14 +53,14 @@ describe('Execute Argo Workflow', () => {
             expect(exec).toHaveBeenCalledTimes(2)
             expect(exec).toHaveBeenCalledWith('sh', [
                 '-c',
-                '"argo --kubeconfig kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml get `cat workflow.svc-auth-db.id` -o=json > /tmp/workflow.svc-auth-db.result.json"',
+                '"/usr/local/bin/argo --kubeconfig kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml get `cat workflow.svc-auth-db.id` -o=json > /tmp/workflow.svc-auth-db.result.json"',
             ], {
                 cwd: './peachjar-aloha',
                 env,
             })
             expect(exec).toHaveBeenCalledWith('sh', [
                 '-c',
-                '"argo --kubeconfig kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml get `cat workflow.svc-auth-db.id` -o=json > /tmp/workflow.svc-auth-db.result.json"',
+                '"/usr/local/bin/argo --kubeconfig kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml get `cat workflow.svc-auth-db.id` -o=json > /tmp/workflow.svc-auth-db.result.json"',
             ], {
                 cwd: './peachjar-aloha',
                 env,

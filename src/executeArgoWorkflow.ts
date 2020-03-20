@@ -20,9 +20,9 @@ export default async function submitWorkflowToArgo(
 
     await exec('sh', [
         '-c',
-        `"argo --kubeconfig ${kubeconfig} submit ${workflowFile} \
+        `"/usr/local/bin/argo --kubeconfig ${kubeconfig} submit ${workflowFile} \
          ${paramsString} --wait -o=json | jq -r .metadata.name > ${idFile}
-        "`,
+        "`.trim().replace(/\n/gim, ' '),
     ], {
         cwd,
         env,
@@ -32,7 +32,8 @@ export default async function submitWorkflowToArgo(
 
     await exec('sh', [
         '-c',
-        `"argo --kubeconfig ${kubeconfig} get \`cat ${idFile}\` -o=json > ${workflowOutputFile}"`,
+        `"/usr/local/bin/argo --kubeconfig ${kubeconfig} get \`cat ${idFile}\` -o=json > ${workflowOutputFile}"`
+            .trim().replace(/\n/gim, ' '),
     ], {
         cwd,
         env,
