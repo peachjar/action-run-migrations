@@ -27121,8 +27121,8 @@ function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { 
         yield exec('sh', [
             '-c',
             `"/usr/local/bin/argo --kubeconfig ${kubeconfig} submit ${workflowFileAbsolutePath} \
-         ${paramsString} --wait -o=json | jq -r .metadata.name > ${idFile}
-        "`.trim().replace(/\n/gim, ' '),
+         ${paramsString} --wait -o=json | jq -r .metadata.name > ${idFile}"`
+                .trim().replace(/\n/gim, ' ').replace(/\s+/gm, ' ')
         ], {
             env,
         });
@@ -27130,7 +27130,7 @@ function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { 
         yield exec('sh', [
             '-c',
             `"/usr/local/bin/argo --kubeconfig ${kubeconfig} get \`cat ${idFile}\` -o=json > ${workflowOutputFile}"`
-                .trim().replace(/\n/gim, ' '),
+                .trim().replace(/\n/gim, ' ').replace(/\s+/gm, ' '),
         ], {
             env,
         });
