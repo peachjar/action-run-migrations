@@ -50,7 +50,7 @@
     "migrations": [
       {
         "image": "noop",
-        "tag": "db",
+        "tag": "db2",
         "secret": "flyway-noop-postgres-env"
       }
     ]
