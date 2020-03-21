@@ -1,5 +1,5 @@
 import { Context } from '@actions/github/lib/context'
-import { ReadFileAsyncFn, ExecFn, Core, SubmitWorkflowFn, Deps } from '../src/api'
+import { ExecFn, Core, SubmitWorkflowFn, Deps } from '../src/api'
 
 import run from '../src/run'
 
@@ -7,7 +7,6 @@ describe('Run function', () => {
 
     let context: Context
     let core: Core
-    let readFileAsync: ReadFileAsyncFn
     let submitWorkflow: SubmitWorkflowFn
     let exec: ExecFn
     let deps: Deps
@@ -39,11 +38,9 @@ describe('Run function', () => {
             info: jest.fn(),
             setFailed: jest.fn()
         }
-        readFileAsync = jest.fn()
         submitWorkflow = jest.fn(() => Promise.resolve(true))
         deps = {
             submitWorkflow,
-            readFileAsync,
             exec,
             core,
         }
