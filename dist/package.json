@@ -51,7 +51,7 @@
       {
         "image": "noop",
         "tag": "db",
-        "dbsecret": "flyway-noop-postgres-env"
+        "secret": "flyway-noop-postgres-env"
       }
     ]
   }

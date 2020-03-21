@@ -49675,6 +49675,7 @@ function run(deps, context, env) {
                 try {
                     const manifest = requireJson(__webpack_require__.ab + "package.json");
                     const manifestMigrations = lodash_1.get(manifest, 'peachjar.migrations', []);
+                    core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`);
                     const { error } = Joi.validate(manifestMigrations, MigrationsSchema);
                     if (error) {
                         core.debug('Migrations schema invalid', error.details);
