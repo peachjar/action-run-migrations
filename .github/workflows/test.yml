@@ -26,14 +26,14 @@ jobs:
       with:
         githubUsername: ${{ secrets.GITHUB_DEPLOY_USER }}
         githubToken: ${{ secrets.GITHUB_DEPLOY_TOKEN }}
-    - run: |
-        echo "PWD"
-        pwd
-        echo "LS Kilueua"
-        ls kilauea
-        echo "LS Aloha"
-        ls peachjar-aloha
     - uses: ./
+      name: Migration from package.json
+      with:
+        awsAccessKeyId: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        awsSecretAccessKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        environment: kauai
+    - uses: ./
+      name: Migration using explicit values
       with:
         awsAccessKeyId: ${{ secrets.AWS_ACCESS_KEY_ID }}
         awsSecretAccessKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

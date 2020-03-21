@@ -1,5 +1,5 @@
 import { Context } from '@actions/github/lib/context'
-import { ExecFn, Core, SubmitWorkflowFn, Deps } from '../src/api'
+import { ExecFn, Core, SubmitWorkflowFn, RequireFn, Deps } from '../src/api'
 
 import run from '../src/run'
 
@@ -9,6 +9,7 @@ describe('Run function', () => {
     let core: Core
     let submitWorkflow: SubmitWorkflowFn
     let exec: ExecFn
+    let requireJson: RequireFn
     let deps: Deps
 
     const awsAccessKeyId = 'abcd1234'
@@ -16,6 +17,14 @@ describe('Run function', () => {
     const environment = 'kauai'
     const migImage = 'svc-auth-db'
     const migSecret = 'flyway-auth-postgres-env'
+    const packageJson = {
+        peachjar: {
+            migrations: [{
+                image: 'svc-packagejson-db',
+                secret: 'flyway-packagejson-postgres-env',
+            }],
+        },
+    }
 
     beforeEach(() => {
         exec = jest.fn(() => Promise.resolve(0))
@@ -39,8 +48,10 @@ describe('Run function', () => {
             setFailed: jest.fn()
         }
         submitWorkflow = jest.fn(() => Promise.resolve(true))
+        requireJson = jest.fn(() => packageJson)
         deps = {
             submitWorkflow,
+            requireJson,
             exec,
             core,
         }
@@ -95,44 +106,6 @@ describe('Run function', () => {
                     case 'environment': return ''
                     case 'mig_image': return migImage
                     case 'mig_secret': return migSecret
-                    default: return ''
-                }
-            })
-        })
-
-        it('should fail the action', async () => {
-            await run(deps, context, { FOO: 'bar' })
-            expect(core.setFailed).toHaveBeenCalled()
-        })
-    })
-
-    describe('when image is not present', () => {
-        beforeEach(() => {
-            core.getInput = jest.fn((key: string) => {
-                switch (key) {
-                    case 'awsAccessKeyId': return awsAccessKeyId
-                    case 'awsSecretAccessKey': return awsSecretAccessKey
-                    case 'environment': return environment
-                    case 'mig_secret': return migSecret
-                    default: return ''
-                }
-            })
-        })
-
-        it('should fail the action', async () => {
-            await run(deps, context, { FOO: 'bar' })
-            expect(core.setFailed).toHaveBeenCalled()
-        })
-    })
-
-    describe('when secret is not present', () => {
-        beforeEach(() => {
-            core.getInput = jest.fn((key: string) => {
-                switch (key) {
-                    case 'awsAccessKeyId': return awsAccessKeyId
-                    case 'awsSecretAccessKey': return awsSecretAccessKey
-                    case 'environment': return environment
-                    case 'mig_image': return migImage
                     default: return ''
                 }
             })
@@ -316,6 +289,72 @@ describe('Run function', () => {
         it('should fail the action', async () => {
             await run(deps, context, { FOO: 'bar' })
             expect(core.setFailed).toHaveBeenCalled()
+        })
+    })
+
+    describe('when the migrations fields are not set', () => {
+        beforeEach(() => {
+            core.getInput = jest.fn((key: string) => {
+                switch (key) {
+                    case 'awsAccessKeyId': return awsAccessKeyId
+                    case 'awsSecretAccessKey': return awsSecretAccessKey
+                    case 'environment': return environment
+                    default: return ''
+                }
+            })
+        })
+
+        it('should read package.json for the migrations', async () => {
+            await run(deps, context, { FOO: 'bar' })
+            expect(core.setFailed).not.toHaveBeenCalled()
+            expect(submitWorkflow).toHaveBeenCalledTimes(1)
+            expect(submitWorkflow).toHaveBeenCalledWith(
+                {
+                    deployEnv: environment,
+                    name: 'svc-packagejson-db',
+                    workflowFile: 'workflows/migrations/migrate.yml',
+                    cwd: expect.anything(),
+                    params: {
+                        image: 'svc-packagejson-db:fa1e24f',
+                        dbsecret: 'flyway-packagejson-postgres-env',
+                    },
+                },
+                expect.anything(),
+                {
+                    FOO: 'bar',
+                    AWS_ACCESS_KEY_ID: awsAccessKeyId,
+                    AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
+                }
+            )
+        })
+
+        describe('when the fields in package.json are invalid', () => {
+            beforeEach(() => {
+                requireJson = () => ({
+                    peachjar: {
+                        // Missing secrets
+                        migrations: [{ image: 'foobar' }]
+                    },
+                })
+                deps.requireJson = requireJson
+            })
+
+            it('should fail the action', async () => {
+                await run(deps, context, { FOO: 'bar' })
+                expect(core.setFailed).toHaveBeenCalled()
+            })
+        })
+
+        describe('when loading package.json fails', () => {
+            beforeEach(() => {
+                requireJson = jest.fn(() => { throw new Error('Kaboom') })
+                deps.requireJson = requireJson
+            })
+
+            it('should fail the action', async () => {
+                await run(deps, context, { FOO: 'bar' })
+                expect(core.setFailed).toHaveBeenCalled()
+            })
         })
     })
 })

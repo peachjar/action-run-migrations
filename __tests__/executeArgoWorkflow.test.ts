@@ -49,6 +49,7 @@ describe('Execute Argo Workflow', () => {
         }
         deps = {
             submitWorkflow: jest.fn(),
+            requireJson: jest.fn(),
             exec,
             core,
         }

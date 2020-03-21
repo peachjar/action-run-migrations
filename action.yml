@@ -14,6 +14,30 @@ inputs:
   environment:
     required: true
     description: Environment to run migrations in
-  migrations:
-    required: true
-    description: Migration image=secret pairs (QS encoded)
+  mig_image:
+    required: false
+    description: Docker image with the migration
+  mig_tag:
+    required: false
+    description: Tag of the Docker image (defaults to gitsha.slice(0, 7))
+  mig_secret:
+    required: false
+    description: Kubernetes secret that will be mounted with the migration container.
+  mig_image_2:
+    required: false
+    description: Docker image with the migration
+  mig_tag_2:
+    required: false
+    description: Tag of the Docker image (defaults to gitsha.slice(0, 7))
+  mig_secret_2:
+    required: false
+    description: Kubernetes secret that will be mounted with the migration container.
+  mig_image_3:
+    required: false
+    description: Docker image with the migration
+  mig_tag_3:
+    required: false
+    description: Tag of the Docker image (defaults to gitsha.slice(0, 7))
+  mig_secret_3:
+    required: false
+    description: Kubernetes secret that will be mounted with the migration container.

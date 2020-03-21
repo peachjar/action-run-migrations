@@ -1,10 +1,26 @@
-import { isArray, first, identity } from 'lodash'
+import * as Joi from 'joi'
+
+import { get, identity } from 'lodash'
 import { Context } from '@actions/github/lib/context'
 import { Deps, Core } from './api'
+import { resolve } from 'path'
 
 import ProcessEnv = NodeJS.ProcessEnv
 
 type ImageTagAndSecret = [string, string, string]
+type Migration = {
+    image: string,
+    tag?: string,
+    secret: string,
+}
+
+const MigrationSchema = Joi.object().keys({
+    image: Joi.string().required(),
+    secret: Joi.string().required(),
+    tag: Joi.string(),
+})
+
+const MigrationsSchema = Joi.array().items(MigrationSchema).min(1)
 
 function getOptionalMigrationsFromEnvironment(core: Core, gitsha: string): ImageTagAndSecret[] {
     const migrations: ImageTagAndSecret[] = []
@@ -28,7 +44,7 @@ export default async function run(
     env: ProcessEnv
 ): Promise<any> {
 
-    const { core, submitWorkflow } = deps
+    const { core, submitWorkflow, requireJson } = deps
 
     try {
         core.info('Deploying service to environment.')
@@ -53,23 +69,43 @@ export default async function run(
             return core.setFailed('Environment not specified or invalid.')
         }
 
-        const migImage = core.getInput('mig_image', { required: true })
+        const migrations: ImageTagAndSecret[] = []
 
-        if (!migImage) {
-            return core.setFailed('First migration image (mig_image) required.')
+        const migImage = core.getInput('mig_image')
+
+        const migSecret = core.getInput('mig_secret')
+
+        if (migImage && migSecret) {
+
+            const migTag = core.getInput('mig_tag')
+
+            const optionalMigrations = getOptionalMigrationsFromEnvironment(core, gitsha)
+
+            migrations.push([migImage, migTag || gitsha, migSecret])
+            migrations.push(...optionalMigrations)
         }
 
-        const migSecret = core.getInput('mig_secret', { required: true })
+        // Look at package.json
+        if (migrations.length === 0) {
+            try {
+                const manifest = requireJson(resolve(process.cwd(), './package.json'))
+                const manifestMigrations = get(manifest, 'peachjar.migrations', []) as Migration[]
 
-        if (!migSecret) {
-            return core.setFailed('First migration secret (mig_secret) required.')
+                const { error } = Joi.validate(manifestMigrations, MigrationsSchema)
+
+                if (error) {
+                    core.debug('Migrations schema invalid', error.details)
+                    return core.setFailed('Validation Error: ' + error.message)
+                }
+
+                migrations.push(...manifestMigrations.map((m: Migration) => {
+                    return [m.image, m.tag || gitsha, m.secret] as ImageTagAndSecret
+                }))
+
+            } catch (error) {
+                return core.setFailed('Uncaught exception: ' + error.message)
+            }
         }
-
-        const migTag = core.getInput('mig_tag')
-
-        const optionalMigrations = getOptionalMigrationsFromEnvironment(core, gitsha)
-
-        const migrations = [[migImage, migTag || gitsha, migSecret]].concat(optionalMigrations)
 
         const results = await Promise.all(
             migrations.map(([image, tag, secret]) =>
@@ -93,7 +129,6 @@ export default async function run(
         core.info('Migrations complete.')
 
     } catch (error) {
-
         core.setFailed(error.message)
     }
 }

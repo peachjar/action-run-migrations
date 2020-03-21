@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+
 import { context } from '@actions/github'
 import { exec } from '@actions/exec'
 import { Deps } from './api'
@@ -9,6 +10,7 @@ const deps: Deps = {
     core,
     exec,
     submitWorkflow,
+    requireJson: require,
 }
 
 import run from './run'
