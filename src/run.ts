@@ -47,7 +47,7 @@ export default async function run(
     const { core, submitWorkflow, requireJson } = deps
 
     try {
-        core.info('Deploying service to environment.')
+        core.info('Running migrations in environment.')
 
         const awsAccessKeyId = core.getInput('awsAccessKeyId', { required: true })
         const awsSecretAccessKey = core.getInput('awsSecretAccessKey', { required: true })
@@ -88,7 +88,7 @@ export default async function run(
         // Look at package.json
         if (migrations.length === 0) {
             try {
-                const manifest = requireJson(resolve(env.GITHUB_WORKSPACE || process.cwd(), './package.json'))
+                const manifest = requireJson(`${env.GITHUB_WORKSPACE}/package.json`)
                 const manifestMigrations = get(manifest, 'peachjar.migrations', []) as Migration[]
 
                 core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`)
