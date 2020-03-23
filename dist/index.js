@@ -49695,6 +49695,8 @@ function run(deps, context, env) {
                 params: {
                     image: `${image}:${tag}`,
                     dbsecret: secret,
+                    repository: `docker.pkg.github.com/peachjar/${context.repo.repo}`,
+                    pullsecret: 'peachjar-eks-github-pull-secret',
                 },
                 workflowFile: 'workflows/migrations/migrate.yml',
                 cwd: process.cwd(),

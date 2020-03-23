@@ -131,6 +131,8 @@ describe('Run function', () => {
                     params: {
                         image: 'svc-auth-db:fa1e24f',
                         dbsecret: migSecret,
+                        repository: 'docker.pkg.github.com/peachjar/peachjar-svc-foobar',
+                        pullsecret: 'peachjar-eks-github-pull-secret',
                     },
                 },
                 expect.anything(),
@@ -171,6 +173,8 @@ describe('Run function', () => {
                     params: {
                         image: 'svc-auth-db:latest',
                         dbsecret: migSecret,
+                        repository: 'docker.pkg.github.com/peachjar/peachjar-svc-foobar',
+                        pullsecret: 'peachjar-eks-github-pull-secret',
                     },
                 },
                 expect.anything(),
@@ -215,6 +219,8 @@ describe('Run function', () => {
                     params: {
                         image: 'svc-auth-db:fa1e24f',
                         dbsecret: migSecret,
+                        repository: 'docker.pkg.github.com/peachjar/peachjar-svc-foobar',
+                        pullsecret: 'peachjar-eks-github-pull-secret',
                     },
                 },
                 expect.anything(),
@@ -233,6 +239,8 @@ describe('Run function', () => {
                     params: {
                         image: 'foobar:foobaz',
                         dbsecret: 'foobar-env',
+                        repository: 'docker.pkg.github.com/peachjar/peachjar-svc-foobar',
+                        pullsecret: 'peachjar-eks-github-pull-secret',
                     },
                 },
                 expect.anything(),
@@ -251,6 +259,8 @@ describe('Run function', () => {
                     params: {
                         image: 'yomama:fa1e24f',
                         dbsecret: 'yomama-env',
+                        repository: 'docker.pkg.github.com/peachjar/peachjar-svc-foobar',
+                        pullsecret: 'peachjar-eks-github-pull-secret',
                     },
                 },
                 expect.anything(),
@@ -317,6 +327,8 @@ describe('Run function', () => {
                     params: {
                         image: 'svc-packagejson-db:fa1e24f',
                         dbsecret: 'flyway-packagejson-postgres-env',
+                        repository: 'docker.pkg.github.com/peachjar/peachjar-svc-foobar',
+                        pullsecret: 'peachjar-eks-github-pull-secret',
                     },
                 },
                 expect.anything(),
