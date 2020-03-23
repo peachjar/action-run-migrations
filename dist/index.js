@@ -49712,7 +49712,7 @@ function run(deps, context, env) {
                 try {
                     const packageJsonPath = `${env.GITHUB_WORKSPACE}/package.json`;
                     core.info(`Loading package.json file: ${packageJsonPath}`);
-                    const manifest = requireJson(core, packageJsonPath);
+                    const manifest = yield requireJson(core, packageJsonPath);
                     const manifestMigrations = lodash_1.get(manifest, 'peachjar.migrations', []);
                     core.info(`Package.json: ${JSON.stringify(manifest)}`);
                     core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`);

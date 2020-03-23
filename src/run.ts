@@ -91,7 +91,7 @@ export default async function run(
 
                 core.info(`Loading package.json file: ${packageJsonPath}`)
 
-                const manifest = requireJson(core, packageJsonPath)
+                const manifest = await requireJson(core, packageJsonPath)
                 const manifestMigrations = get(manifest, 'peachjar.migrations', []) as Migration[]
 
                 core.info(`Package.json: ${JSON.stringify(manifest)}`)

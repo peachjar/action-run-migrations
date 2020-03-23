@@ -48,7 +48,7 @@ describe('Run function', () => {
             setFailed: jest.fn()
         }
         submitWorkflow = jest.fn(() => Promise.resolve(true))
-        requireJson = jest.fn(() => packageJson)
+        requireJson = jest.fn(() => Promise.resolve(packageJson))
         deps = {
             submitWorkflow,
             requireJson,
@@ -342,12 +342,12 @@ describe('Run function', () => {
 
         describe('when the fields in package.json are invalid', () => {
             beforeEach(() => {
-                requireJson = () => ({
+                requireJson = jest.fn(() => Promise.resolve({
                     peachjar: {
                         // Missing secrets
                         migrations: [{ image: 'foobar' }]
                     },
-                })
+                }))
                 deps.requireJson = requireJson
             })
 
