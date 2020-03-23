@@ -49711,7 +49711,9 @@ function run(deps, context, env) {
             // Look at package.json
             if (migrations.length === 0) {
                 try {
-                    const manifest = requireJson(core, `${env.GITHUB_WORKSPACE}/package.json`);
+                    const packageJsonPath = `${env.GITHUB_WORKSPACE}/package.json`;
+                    core.info(`Loading package.json file: ${packageJsonPath}`);
+                    const manifest = requireJson(core, packageJsonPath);
                     const manifestMigrations = lodash_1.get(manifest, 'peachjar.migrations', []);
                     core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`);
                     const { error } = Joi.validate(manifestMigrations, MigrationsSchema);
