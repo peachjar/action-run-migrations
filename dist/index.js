@@ -4995,12 +4995,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const github_1 = __webpack_require__(469);
 const exec_1 = __webpack_require__(986);
+const requireJson_1 = __importDefault(__webpack_require__(757));
 const executeArgoWorkflow_1 = __importDefault(__webpack_require__(773));
 const deps = {
     core,
     exec: exec_1.exec,
     submitWorkflow: executeArgoWorkflow_1.default,
-    requireJson: require,
+    requireJson: requireJson_1.default,
 };
 const run_1 = __importDefault(__webpack_require__(861));
 run_1.default(deps, github_1.context, process.env);
@@ -33798,6 +33799,40 @@ exports.request = request;
 
 /***/ }),
 
+/***/ 757:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const fs_1 = __webpack_require__(747);
+const util_1 = __webpack_require__(669);
+const readFileAsync = util_1.promisify(fs_1.readFile);
+function requireJson(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const contents = yield readFileAsync(path, 'utf-8');
+            return JSON.parse(contents);
+        }
+        catch (error) {
+            throw error;
+        }
+    });
+}
+exports.default = requireJson;
+
+
+/***/ }),
+
 /***/ 761:
 /***/ (function(module) {
 
@@ -49623,7 +49658,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const Joi = __importStar(__webpack_require__(274));
 const lodash_1 = __webpack_require__(557);
-const path_1 = __webpack_require__(622);
 const MigrationSchema = Joi.object().keys({
     image: Joi.string().required(),
     secret: Joi.string().required(),
@@ -49647,7 +49681,7 @@ function run(deps, context, env) {
     return __awaiter(this, void 0, void 0, function* () {
         const { core, submitWorkflow, requireJson } = deps;
         try {
-            core.info('Deploying service to environment.');
+            core.info('Running migrations in environment.');
             const awsAccessKeyId = core.getInput('awsAccessKeyId', { required: true });
             const awsSecretAccessKey = core.getInput('awsSecretAccessKey', { required: true });
             if (!awsAccessKeyId || !awsSecretAccessKey) {
@@ -49674,7 +49708,7 @@ function run(deps, context, env) {
             // Look at package.json
             if (migrations.length === 0) {
                 try {
-                    const manifest = requireJson(__webpack_require__.ab + "action-run-migrations/" + env.GITHUB_WORKSPACE || process.cwd() + '/package.json');
+                    const manifest = requireJson(`${env.GITHUB_WORKSPACE}/package.json`);
                     const manifestMigrations = lodash_1.get(manifest, 'peachjar.migrations', []);
                     core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`);
                     const { error } = Joi.validate(manifestMigrations, MigrationsSchema);
