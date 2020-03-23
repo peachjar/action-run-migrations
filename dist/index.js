@@ -33875,6 +33875,7 @@ function shellExec(exec, command, args, env) {
         const stderrBuffer = [];
         const exitCode = yield exec(command, args, {
             env,
+            cwd: env.GITHUB_WORKSPACE || process.cwd(),
             listeners: {
                 stdout(data) {
                     stdoutBuffer.push(data.toString());
@@ -49673,7 +49674,7 @@ function run(deps, context, env) {
             // Look at package.json
             if (migrations.length === 0) {
                 try {
-                    const manifest = requireJson(__webpack_require__.ab + "package.json");
+                    const manifest = requireJson(__webpack_require__.ab + "action-run-migrations/" + env.GITHUB_WORKSPACE || process.cwd() + '/package.json');
                     const manifestMigrations = lodash_1.get(manifest, 'peachjar.migrations', []);
                     core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`);
                     const { error } = Joi.validate(manifestMigrations, MigrationsSchema);

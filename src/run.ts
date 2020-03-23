@@ -88,7 +88,7 @@ export default async function run(
         // Look at package.json
         if (migrations.length === 0) {
             try {
-                const manifest = requireJson(resolve(process.cwd(), './package.json'))
+                const manifest = requireJson(resolve(env.GITHUB_WORKSPACE || process.cwd(), './package.json'))
                 const manifestMigrations = get(manifest, 'peachjar.migrations', []) as Migration[]
 
                 core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`)

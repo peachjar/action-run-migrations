@@ -12,6 +12,7 @@ async function shellExec(
     const stderrBuffer: string[] = []
     const exitCode = await exec(command, args, {
         env,
+        cwd: env.GITHUB_WORKSPACE || process.cwd(),
         listeners: {
             stdout(data) {
                 stdoutBuffer.push(data.toString())
