@@ -94,6 +94,7 @@ export default async function run(
                 const manifest = requireJson(core, packageJsonPath)
                 const manifestMigrations = get(manifest, 'peachjar.migrations', []) as Migration[]
 
+                core.info(`Package.json: ${JSON.stringify(manifest)}`)
                 core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`)
 
                 const { error } = Joi.validate(manifestMigrations, MigrationsSchema)

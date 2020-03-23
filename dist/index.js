@@ -33821,9 +33821,7 @@ function requireJson(core, path) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const contents = yield readFileAsync(path, 'utf-8');
-            const json = JSON.parse(contents);
-            core.info(json);
-            return json;
+            return JSON.parse(contents);
         }
         catch (error) {
             core.info(`ERROR: ${error.message}; ${error.stack}`);
@@ -49715,6 +49713,7 @@ function run(deps, context, env) {
                     core.info(`Loading package.json file: ${packageJsonPath}`);
                     const manifest = requireJson(core, packageJsonPath);
                     const manifestMigrations = lodash_1.get(manifest, 'peachjar.migrations', []);
+                    core.info(`Package.json: ${JSON.stringify(manifest)}`);
                     core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`);
                     const { error } = Joi.validate(manifestMigrations, MigrationsSchema);
                     if (error) {
