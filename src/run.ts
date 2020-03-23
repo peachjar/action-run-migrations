@@ -3,7 +3,6 @@ import * as Joi from 'joi'
 import { get, identity } from 'lodash'
 import { Context } from '@actions/github/lib/context'
 import { Deps, Core } from './api'
-import { resolve } from 'path'
 
 import ProcessEnv = NodeJS.ProcessEnv
 
@@ -88,7 +87,7 @@ export default async function run(
         // Look at package.json
         if (migrations.length === 0) {
             try {
-                const manifest = requireJson(`${env.GITHUB_WORKSPACE}/package.json`)
+                const manifest = requireJson(core, `${env.GITHUB_WORKSPACE}/package.json`)
                 const manifestMigrations = get(manifest, 'peachjar.migrations', []) as Migration[]
 
                 core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`)

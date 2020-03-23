@@ -33817,11 +33817,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __webpack_require__(747);
 const util_1 = __webpack_require__(669);
 const readFileAsync = util_1.promisify(fs_1.readFile);
-function requireJson(path) {
+function requireJson(core, path) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            core.debug('Looking up file in path:', path);
             const contents = yield readFileAsync(path, 'utf-8');
-            return JSON.parse(contents);
+            const json = JSON.parse(contents);
+            core.debug(json);
+            return json;
         }
         catch (error) {
             throw error;
@@ -49708,7 +49711,7 @@ function run(deps, context, env) {
             // Look at package.json
             if (migrations.length === 0) {
                 try {
-                    const manifest = requireJson(`${env.GITHUB_WORKSPACE}/package.json`);
+                    const manifest = requireJson(core, `${env.GITHUB_WORKSPACE}/package.json`);
                     const manifestMigrations = lodash_1.get(manifest, 'peachjar.migrations', []);
                     core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`);
                     const { error } = Joi.validate(manifestMigrations, MigrationsSchema);
