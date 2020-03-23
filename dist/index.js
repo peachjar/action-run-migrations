@@ -33820,13 +33820,13 @@ const readFileAsync = util_1.promisify(fs_1.readFile);
 function requireJson(core, path) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            core.debug('Looking up file in path:', path);
             const contents = yield readFileAsync(path, 'utf-8');
             const json = JSON.parse(contents);
-            core.debug(json);
+            core.info(json);
             return json;
         }
         catch (error) {
+            core.info(`ERROR: ${error.message}; ${error.stack}`);
             throw error;
         }
     });
