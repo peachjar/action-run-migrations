@@ -7,7 +7,6 @@ const readFileAsync = promisify(readFile)
 export default async function requireJson(core: Core, path: string): Promise<Record<string, any>> {
     try {
         const contents = await readFileAsync(path, 'utf-8')
-        core.info(`Contents: ${contents}`)
         return JSON.parse(contents)
     } catch (error) {
         core.info(`ERROR: ${error.message}; ${error.stack}`)

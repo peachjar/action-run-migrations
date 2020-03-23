@@ -94,13 +94,12 @@ export default async function run(
                 const manifest = await requireJson(core, packageJsonPath)
                 const manifestMigrations = get(manifest, 'peachjar.migrations', []) as Migration[]
 
-                core.info(`Package.json: ${JSON.stringify(manifest)}`)
                 core.info(`Migrations from package.json: ${JSON.stringify(manifestMigrations)}`)
 
                 const { error } = Joi.validate(manifestMigrations, MigrationsSchema)
 
                 if (error) {
-                    core.debug('Migrations schema invalid', error.details)
+                    core.info('Migrations schema invalid', error.details)
                     return core.setFailed('Validation Error: ' + error.message)
                 }
 
