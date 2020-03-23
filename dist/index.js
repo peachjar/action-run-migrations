@@ -49665,12 +49665,15 @@ const MigrationSchema = Joi.object().keys({
     tag: Joi.string(),
 });
 const MigrationsSchema = Joi.array().items(MigrationSchema).min(1);
-function getOptionalMigrationsFromEnvironment(core, gitsha) {
+function createGitshaTag(gitsha) {
+    return `git-${gitsha}`;
+}
+function getOptionalMigrationsFromEnvironment(core, gitshaTag) {
     const migrations = [];
     for (let i = 2; i < 4; i++) {
         const image = core.getInput(`mig_image_${i}`);
         const maybeTag = core.getInput(`mig_tag_${i}`);
-        const tag = maybeTag || gitsha;
+        const tag = maybeTag || gitshaTag;
         const secret = core.getInput(`mig_secret_${i}`);
         if (image && secret) {
             migrations.push([image, tag, secret]);
@@ -49692,7 +49695,7 @@ function run(deps, context, env) {
                 AWS_ACCESS_KEY_ID: awsAccessKeyId,
                 AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
             });
-            const gitsha = context.sha.slice(0, 7);
+            const shaTag = createGitshaTag(context.sha.slice(0, 7));
             const environment = core.getInput('environment', { required: true });
             if (!environment) {
                 return core.setFailed('Environment not specified or invalid.');
@@ -49702,8 +49705,8 @@ function run(deps, context, env) {
             const migSecret = core.getInput('mig_secret');
             if (migImage && migSecret) {
                 const migTag = core.getInput('mig_tag');
-                const optionalMigrations = getOptionalMigrationsFromEnvironment(core, gitsha);
-                migrations.push([migImage, migTag || gitsha, migSecret]);
+                const optionalMigrations = getOptionalMigrationsFromEnvironment(core, shaTag);
+                migrations.push([migImage, migTag || shaTag, migSecret]);
                 migrations.push(...optionalMigrations);
             }
             // Look at package.json
@@ -49720,7 +49723,7 @@ function run(deps, context, env) {
                         return core.setFailed('Validation Error: ' + error.message);
                     }
                     migrations.push(...manifestMigrations.map((m) => {
-                        return [m.image, m.tag || gitsha, m.secret];
+                        return [m.image, m.tag || shaTag, m.secret];
                     }));
                 }
                 catch (error) {

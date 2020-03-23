@@ -21,13 +21,17 @@ const MigrationSchema = Joi.object().keys({
 
 const MigrationsSchema = Joi.array().items(MigrationSchema).min(1)
 
-function getOptionalMigrationsFromEnvironment(core: Core, gitsha: string): ImageTagAndSecret[] {
+function createGitshaTag(gitsha: string): string {
+    return `git-${gitsha}`
+}
+
+function getOptionalMigrationsFromEnvironment(core: Core, gitshaTag: string): ImageTagAndSecret[] {
     const migrations: ImageTagAndSecret[] = []
 
     for (let i = 2; i < 4; i++) {
         const image = core.getInput(`mig_image_${i}`)
         const maybeTag = core.getInput(`mig_tag_${i}`)
-        const tag = maybeTag || gitsha
+        const tag = maybeTag || gitshaTag
         const secret = core.getInput(`mig_secret_${i}`)
         if (image && secret) {
             migrations.push([image, tag, secret])
@@ -60,7 +64,7 @@ export default async function run(
             AWS_SECRET_ACCESS_KEY: awsSecretAccessKey,
         }) as { [k: string]: string }
 
-        const gitsha = context.sha.slice(0, 7)
+        const shaTag = createGitshaTag(context.sha.slice(0, 7))
 
         const environment = core.getInput('environment', { required: true })
 
@@ -78,9 +82,9 @@ export default async function run(
 
             const migTag = core.getInput('mig_tag')
 
-            const optionalMigrations = getOptionalMigrationsFromEnvironment(core, gitsha)
+            const optionalMigrations = getOptionalMigrationsFromEnvironment(core, shaTag)
 
-            migrations.push([migImage, migTag || gitsha, migSecret])
+            migrations.push([migImage, migTag || shaTag, migSecret])
             migrations.push(...optionalMigrations)
         }
 
@@ -104,7 +108,7 @@ export default async function run(
                 }
 
                 migrations.push(...manifestMigrations.map((m: Migration) => {
-                    return [m.image, m.tag || gitsha, m.secret] as ImageTagAndSecret
+                    return [m.image, m.tag || shaTag, m.secret] as ImageTagAndSecret
                 }))
 
             } catch (error) {

@@ -129,7 +129,7 @@ describe('Run function', () => {
                     workflowFile: 'workflows/migrations/migrate.yml',
                     cwd: expect.anything(),
                     params: {
-                        image: 'svc-auth-db:fa1e24f',
+                        image: 'svc-auth-db:git-fa1e24f',
                         dbsecret: migSecret,
                         repository: 'docker.pkg.github.com/peachjar/peachjar-svc-foobar',
                         pullsecret: 'peachjar-eks-github-pull-secret',
@@ -217,7 +217,7 @@ describe('Run function', () => {
                     workflowFile: 'workflows/migrations/migrate.yml',
                     cwd: expect.anything(),
                     params: {
-                        image: 'svc-auth-db:fa1e24f',
+                        image: 'svc-auth-db:git-fa1e24f',
                         dbsecret: migSecret,
                         repository: 'docker.pkg.github.com/peachjar/peachjar-svc-foobar',
                         pullsecret: 'peachjar-eks-github-pull-secret',
@@ -257,7 +257,7 @@ describe('Run function', () => {
                     workflowFile: 'workflows/migrations/migrate.yml',
                     cwd: expect.anything(),
                     params: {
-                        image: 'yomama:fa1e24f',
+                        image: 'yomama:git-fa1e24f',
                         dbsecret: 'yomama-env',
                         repository: 'docker.pkg.github.com/peachjar/peachjar-svc-foobar',
                         pullsecret: 'peachjar-eks-github-pull-secret',
@@ -325,7 +325,7 @@ describe('Run function', () => {
                     workflowFile: 'workflows/migrations/migrate.yml',
                     cwd: expect.anything(),
                     params: {
-                        image: 'svc-packagejson-db:fa1e24f',
+                        image: 'svc-packagejson-db:git-fa1e24f',
                         dbsecret: 'flyway-packagejson-postgres-env',
                         repository: 'docker.pkg.github.com/peachjar/peachjar-svc-foobar',
                         pullsecret: 'peachjar-eks-github-pull-secret',
