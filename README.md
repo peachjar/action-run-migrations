@@ -6,6 +6,8 @@
 
 Run migrations in one of Peachjar's environments.  If you are not Peachjar, this will be no help to you!
 
+Note:  this module has been configured to trigger deployments of images from the repository using this migration (does not support Quay -- assuming we are migrating away from it).
+
 ## Usage
 
 Default usage assumes there is a `package.json` in the repository with the `peachjar.migrations` property:
