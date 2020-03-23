@@ -33821,6 +33821,7 @@ function requireJson(core, path) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const contents = yield readFileAsync(path, 'utf-8');
+            core.info(`Contents: ${contents}`);
             return JSON.parse(contents);
         }
         catch (error) {
