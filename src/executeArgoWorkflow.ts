@@ -21,6 +21,7 @@ async function shellExec(
                 stderrBuffer.push(data.toString())
             }
         },
+        failOnStdErr: false,
     })
     return [exitCode, stdoutBuffer.join(''), stderrBuffer.join('')]
 }
