@@ -33,7 +33,7 @@ jobs:
         echo "PACKAGE.JSON --------------------------------------"
         cat "${GITHUB_WORKSPACE}/package.json"
         echo ****
-        ls kilahuea/kubefiles/kauai/kubeconfig-github-actions/
+        ls kilauea/kubefiles/kauai/kubeconfig-github-actions/
     - uses: ./
       name: Migration from package.json
       with:
