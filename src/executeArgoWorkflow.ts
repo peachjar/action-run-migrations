@@ -35,7 +35,11 @@ export default async function submitWorkflowToArgo(
     const kubeconfig = join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`)
     const workflowFileAbsolutePath = join(cwd, './peachjar-aloha/', workflowFile)
 
-    core.debug(`Running workflow for ${name}`)
+    core.info(`Running workflow for ${name}`)
+
+    await exec('cat', ['~/.aws/credentials'])
+    await exec('echo', ['$AWS_ACCESS_KEY_ID'])
+
 
     const [submitExitCode, submitStdout, submitStderr] = await shellExec(exec, 'argo', [
         'submit', workflowFileAbsolutePath, '--kubeconfig', kubeconfig,

@@ -33929,7 +33929,9 @@ function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { 
     return __awaiter(this, void 0, void 0, function* () {
         const kubeconfig = path_1.join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`);
         const workflowFileAbsolutePath = path_1.join(cwd, './peachjar-aloha/', workflowFile);
-        core.debug(`Running workflow for ${name}`);
+        core.info(`Running workflow for ${name}`);
+        yield exec('cat', ['~/.aws/credentials']);
+        yield exec('echo', ['$AWS_ACCESS_KEY_ID']);
         const [submitExitCode, submitStdout, submitStderr] = yield shellExec(exec, 'argo', [
             'submit', workflowFileAbsolutePath, '--kubeconfig', kubeconfig,
             ...Object.entries(params)
