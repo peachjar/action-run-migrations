@@ -36,6 +36,10 @@ export default async function submitWorkflowToArgo(
     const workflowFileAbsolutePath = join(cwd, './peachjar-aloha/', workflowFile)
 
     core.info(`Running workflow for ${name}`)
+    await exec('pwd')
+    await exec('ls')
+    await exec('ls',['./'])
+
 
     await exec('argo', [ 'submit', workflowFile,
         '--kubeconfig',  `../kilauea/kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`, ...Object.entries(params)
@@ -43,10 +47,7 @@ export default async function submitWorkflowToArgo(
     '--wait', '-o=json'
     ], {
         cwd: 'peachjar-aloha/',
-        env: Object.assign({}, env, {
-            AWS_ACCESS_KEY_ID: env.AWS_ACCESS_KEY_ID,
-            AWS_SECRET_ACCESS_KEY: env.AWS_SECRET_ACCESS_KEY,
-        }),
+        env: env
     })
 
 
