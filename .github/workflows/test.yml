@@ -32,8 +32,12 @@ jobs:
         ls "${GITHUB_WORKSPACE}"
         echo "PACKAGE.JSON --------------------------------------"
         cat "${GITHUB_WORKSPACE}/package.json"
-        echo ****
-        ls kilauea/kubefiles/kauai/kubeconfig-github-actions/
+        echo "Config location"
+
+        cd kilauea/kubefiles/kauai/kubeconfig-github-actions/
+        ls
+        pwd
+      continue-on-error: true  
     - uses: ./
       name: Migration from package.json
       with:
