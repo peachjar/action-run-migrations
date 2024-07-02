@@ -37,6 +37,10 @@ export default async function submitWorkflowToArgo(
 
     core.debug(`Running workflow for ${name}`)
 
+    await shellExec(exec, 'helm', [
+        '--kubeconfig', kubeconfig, 'ls'
+    ], env)
+
     await shellExec(exec, 'argo', [
         '--kubeconfig', kubeconfig, 'list', '--verbose'
     ], env)
