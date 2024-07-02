@@ -33930,8 +33930,8 @@ function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { 
         const kubeconfig = path_1.join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`);
         const workflowFileAbsolutePath = path_1.join(cwd, './peachjar-aloha/', workflowFile);
         core.info(`Running workflow for ${name}`);
-        yield exec('argo', ['submit', workflowFileAbsolutePath,
-            '--kubeconfig', kubeconfig, ...Object.entries(params)
+        yield exec('argo', ['submit', workflowFile,
+            '--kubeconfig', `../kilauea/kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`, ...Object.entries(params)
                 .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), []),
             '--wait', '-o=json'
         ], {
