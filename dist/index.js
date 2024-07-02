@@ -33927,9 +33927,9 @@ function shellExec(exec, command, args, env) {
 }
 function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { core, exec }, env) {
     return __awaiter(this, void 0, void 0, function* () {
-        const kubeconfig = path_1.join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`);
-        const workflowFileAbsolutePath = path_1.join(cwd, './peachjar-aloha/', workflowFile);
-        core.debug(`Running workflow for ${name}`);
+        const kubeconfig = `../kilauea/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`;
+        const workflowFileAbsolutePath = path_1.join('../peachjar-aloha/', workflowFile);
+        core.info(`Running workflow for ${name}`);
         const [submitExitCode, submitStdout, submitStderr] = yield shellExec(exec, 'argo', [
             '--kubeconfig', kubeconfig, 'submit', workflowFileAbsolutePath,
             ...Object.entries(params)
@@ -33937,7 +33937,7 @@ function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { 
             '--wait', '-o=json',
         ], env);
         if (submitExitCode > 0) {
-            core.debug('Argo submit failed.');
+            core.info('Argo submit failed.');
             core.info(submitStderr);
             return false;
         }
