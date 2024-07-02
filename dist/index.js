@@ -33931,7 +33931,7 @@ function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { 
         const workflowFileAbsolutePath = path_1.join(cwd, './peachjar-aloha/', workflowFile);
         core.debug(`Running workflow for ${name}`);
         const [submitExitCode, submitStdout, submitStderr] = yield shellExec(exec, 'argo', [
-            '--kubeconfig', kubeconfig, 'submit', workflowFileAbsolutePath,
+            'submit', workflowFileAbsolutePath, '--kubeconfig', kubeconfig,
             ...Object.entries(params)
                 .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), []),
             '--wait', '-o=json',
