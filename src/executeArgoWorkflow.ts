@@ -37,8 +37,17 @@ export default async function submitWorkflowToArgo(
 
     core.info(`Running workflow for ${name}`)
 
-    await exec('cat', ['~/.aws/credentials'])
-    await exec('echo', ['$AWS_ACCESS_KEY_ID'])
+    await exec('argo', [ 'submit', workflowFileAbsolutePath,
+        '--kubeconfig', kubeconfig, ...Object.entries(params)
+        .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), [] as string[]),
+    '--wait', '-o=json'
+    ], {
+        cwd: 'peachjar-aloha/',
+        env: Object.assign({}, env, {
+            AWS_ACCESS_KEY_ID: env.AWS_ACCESS_KEY_ID,
+            AWS_SECRET_ACCESS_KEY: env.AWS_SECRET_ACCESS_KEY,
+        }),
+    })
 
 
     const [submitExitCode, submitStdout, submitStderr] = await shellExec(exec, 'argo', [
