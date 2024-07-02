@@ -40,9 +40,15 @@ export default async function submitWorkflowToArgo(
     await exec('ls')
     await exec('cat',[`kilauea/kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`])
  
-    core.info(env)
+    core.info(JSON.stringify(env))
     await exec('echo', ['$AWS_PROFILE'])
 
+    await exec('helm', ['--kubeconfig', `../kilauea/kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-beta-admins.yml`, 'ls'],
+        {
+            cwd: 'peachjar-aloha/',
+            env: env,
+        }
+        )
     await exec('argo', [ 'submit', workflowFile,
         '--kubeconfig',  `../kilauea/kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`, ...Object.entries(params)
         .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), [] as string[]),
