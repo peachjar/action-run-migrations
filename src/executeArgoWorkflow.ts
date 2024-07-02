@@ -38,8 +38,10 @@ export default async function submitWorkflowToArgo(
     core.info(`Running workflow for ${name}`)
     await exec('pwd')
     await exec('ls')
-    await exec('ls',['./'])
-
+    await exec('cat',[`kilauea/kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`])
+ 
+    core.info(env)
+    await exec('echo', ['$AWS_PROFILE'])
 
     await exec('argo', [ 'submit', workflowFile,
         '--kubeconfig',  `../kilauea/kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`, ...Object.entries(params)
