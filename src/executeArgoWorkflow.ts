@@ -37,19 +37,11 @@ export default async function submitWorkflowToArgo(
 
     core.debug(`Running workflow for ${name}`)
 
-    await shellExec(exec, 'helm', [
-        '--kubeconfig', kubeconfig, 'ls'
-    ], env)
-
-    await shellExec(exec, 'argo', [
-        '--kubeconfig', kubeconfig, 'list', '--verbose'
-    ], env)
-
     const [submitExitCode, submitStdout, submitStderr] = await shellExec(exec, 'argo', [
         '--kubeconfig', kubeconfig, 'submit', workflowFileAbsolutePath,
         ...Object.entries(params)
             .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), [] as string[]),
-        '--wait', '-o=json','--verbose',
+        '--wait', '-o=json'
     ], env)
 
     if (submitExitCode > 0) {
