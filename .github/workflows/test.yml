@@ -34,7 +34,7 @@ jobs:
         cat "${GITHUB_WORKSPACE}/package.json"
         echo "Config location"
 
-        cd kilauea/kubefiles/kauai/kubeconfig-github-actions/
+        cd kilauea/kubefiles/kauai/kubectl_configs/
         ls
         pwd
       continue-on-error: true  

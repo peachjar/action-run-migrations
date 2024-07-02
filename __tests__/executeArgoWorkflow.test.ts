@@ -61,14 +61,14 @@ describe('Execute Argo Workflow', () => {
             expect(exec).toHaveBeenCalledTimes(2)
             expect(exec).toHaveBeenCalledWith('argo', [
                 '--kubeconfig',
-                '/home/repo/kilauea/kubefiles/kauai/kubeconfig-github-actions/kauai-kube-config-admins.yml',
+                '/home/repo/kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml',
                 'submit', '/home/repo/peachjar-aloha/workflows/migrations/migrate.yml',
                 '-p', 'image=svc-auth-db:abcd123', '-p', 'dbsecret=flyway-auth-postgres-env', '--wait',
                 '-o=json'
             ], expect.anything())
             expect(exec).toHaveBeenCalledWith('argo', [
                 '--kubeconfig',
-                '/home/repo/kilauea/kubefiles/kauai/kubeconfig-github-actions/kauai-kube-config-admins.yml',
+                '/home/repo/kilauea/kubefiles/kauai/kubectl_configs/kauai-kube-config-admins.yml',
                 'get', 'migrate-foobar-123', '-o=json',
             ], expect.anything())
             expect(result).toEqual(true)

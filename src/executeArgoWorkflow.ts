@@ -32,10 +32,10 @@ export default async function submitWorkflowToArgo(
     env: Environment
 ): Promise<boolean> {
 
-    const kubeconfig = `../kilauea/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`
-    const workflowFileAbsolutePath = join('../peachjar-aloha/', workflowFile)
+    const kubeconfig = join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`)
+    const workflowFileAbsolutePath = join(cwd, './peachjar-aloha/', workflowFile)
 
-    core.info(`Running workflow for ${name}`)
+    core.debug(`Running workflow for ${name}`)
 
     const [submitExitCode, submitStdout, submitStderr] = await shellExec(exec, 'argo', [
         '--kubeconfig', kubeconfig, 'submit', workflowFileAbsolutePath,
@@ -45,7 +45,7 @@ export default async function submitWorkflowToArgo(
     ], env)
 
     if (submitExitCode > 0) {
-        core.info('Argo submit failed.')
+        core.debug('Argo submit failed.')
         core.info(submitStderr)
         return false
     }
