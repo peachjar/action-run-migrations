@@ -37,6 +37,10 @@ export default async function submitWorkflowToArgo(
 
     core.debug(`Running workflow for ${name}`)
 
+    await shellExec(exec, 'argo', [
+        '--kubeconfig', kubeconfig, 'list'
+    ], env)
+
     const [submitExitCode, submitStdout, submitStderr] = await shellExec(exec, 'argo', [
         '--kubeconfig', kubeconfig, 'submit', workflowFileAbsolutePath,
         ...Object.entries(params)
