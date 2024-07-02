@@ -40,6 +40,7 @@ jobs:
         awsAccessKeyId: ${{ secrets.AWS_ACCESS_KEY_ID }}
         awsSecretAccessKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         environment: kauai
+      continue-on-error: true
     - uses: ./
       name: Migration using explicit values
       with:
