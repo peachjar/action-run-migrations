@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: peachjar/action-install-deploy-tools@v4
+    - uses: peachjar/action-install-deploy-tools@v5
       with:
         githubUsername: ${{ secrets.GITHUB_DEPLOY_USER }}
         githubToken: ${{ secrets.GITHUB_DEPLOY_TOKEN }}
@@ -34,7 +34,7 @@ jobs:
         cat "${GITHUB_WORKSPACE}/package.json"
         echo "Config location"
 
-        cd kilauea/kubefiles/kauai/kubectl_configs/
+        cd kilauea/kubefiles/kauai/kubeconfig-github-actions/
         ls
         pwd
       continue-on-error: true  
