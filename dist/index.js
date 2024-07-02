@@ -33929,26 +33929,9 @@ function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { 
     return __awaiter(this, void 0, void 0, function* () {
         const kubeconfig = path_1.join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`);
         const workflowFileAbsolutePath = path_1.join(cwd, './peachjar-aloha/', workflowFile);
-        core.info(`Running workflow for ${name}`);
-        yield exec('pwd');
-        yield exec('ls');
-        yield exec('cat', [`kilauea/kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`]);
-        core.info(JSON.stringify(env));
-        yield exec('echo', ['$AWS_PROFILE']);
-        yield exec('helm', ['--kubeconfig', `../kilauea/kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-beta-admins.yml`, 'ls'], {
-            cwd: 'peachjar-aloha/',
-            env: env,
-        });
-        yield exec('argo', ['submit', workflowFile,
-            '--kubeconfig', `../kilauea/kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`, ...Object.entries(params)
-                .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), []),
-            '--wait', '-o=json'
-        ], {
-            cwd: 'peachjar-aloha/',
-            env: env
-        });
+        core.debug(`Running workflow for ${name}`);
         const [submitExitCode, submitStdout, submitStderr] = yield shellExec(exec, 'argo', [
-            'submit', workflowFileAbsolutePath, '--kubeconfig', kubeconfig,
+            '--kubeconfig', kubeconfig, 'submit', workflowFileAbsolutePath,
             ...Object.entries(params)
                 .reduce((acc, [k, v]) => acc.concat('-p', `${k}=${v}`), []),
             '--wait', '-o=json',

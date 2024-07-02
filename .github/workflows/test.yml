@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: peachjar/action-install-deploy-tools@v5
+    - uses: peachjar/action-install-deploy-tools@v4
       with:
         githubUsername: ${{ secrets.GITHUB_DEPLOY_USER }}
         githubToken: ${{ secrets.GITHUB_DEPLOY_TOKEN }}
