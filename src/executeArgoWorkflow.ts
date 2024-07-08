@@ -32,7 +32,16 @@ export default async function submitWorkflowToArgo(
     env: Environment
 ): Promise<boolean> {
 
-    const kubeconfig = join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`)
+    var kubeconfig
+    if (deployEnv === 'maui'){
+        core.info("Migration in maui")
+        kubeconfig = join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`)
+
+    }else {
+        core.info(`Migration in ${deployEnv}`)
+        kubeconfig = join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`)
+
+    }
     const workflowFileAbsolutePath = join(cwd, './peachjar-aloha/', workflowFile)
 
     core.debug(`Running workflow for ${name}`)
