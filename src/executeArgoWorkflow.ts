@@ -32,12 +32,12 @@ export default async function submitWorkflowToArgo(
     env: Environment
 ): Promise<boolean> {
 
-    var kubeconfig
-    if (deployEnv === 'maui'){
-        core.info("Migration in maui")
+    let kubeconfig
+    if ( deployEnv === 'maui' ) {
+        core.info( 'Migration in maui' )
         kubeconfig = join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`)
 
-    }else {
+    } else {
         core.info(`Migration in ${deployEnv}`)
         kubeconfig = join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubeconfig-github-actions/${deployEnv}-kube-config-admins.yml`)
 

@@ -33927,9 +33927,9 @@ function shellExec(exec, command, args, env) {
 }
 function submitWorkflowToArgo({ deployEnv, cwd, name, params, workflowFile }, { core, exec }, env) {
     return __awaiter(this, void 0, void 0, function* () {
-        var kubeconfig;
+        let kubeconfig;
         if (deployEnv === 'maui') {
-            core.info("Migration in maui");
+            core.info('Migration in maui');
             kubeconfig = path_1.join(cwd, './kilauea/', `./kubefiles/${deployEnv}/kubectl_configs/${deployEnv}-kube-config-admins.yml`);
         }
         else {
