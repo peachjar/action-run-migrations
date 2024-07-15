@@ -124,7 +124,7 @@ export default async function run(
                     params: {
                         image: `${image}:${tag}`,
                         dbsecret: secret,
-                        repository: `docker.pkg.github.com/peachjar/${context.repo.repo}`,
+                        repository: `ghcr.io/peachjar/${context.repo.repo}`,
                         pullsecret: 'peachjar-eks-github-pull-secret',
                     },
                     workflowFile: 'workflows/migrations/migrate.yml',
